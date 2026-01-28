@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Админка — Аналитика</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f5f3ff;
+      --card: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --primary: #7c3aed;
+      --primary-hover: #6d28d9;
+      --accent: #4c1d95;
+      --border: #e5e7eb;
+      --shadow: 0 16px 32px rgba(15, 23, 42, 0.12);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, Arial, sans-serif;
+      background-color: var(--bg);
+      background-image:
+        linear-gradient(rgba(245, 243, 255, 0.92), rgba(245, 243, 255, 0.92)),
+        url("/bg.jpg");
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      color: var(--text);
+    }
+
+    .page {
+      min-height: 100vh;
+      padding: 32px 16px;
+    }
+
+    .card {
+      width: 100%;
+      max-width: 1100px;
+      margin: 0 auto;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+      padding: 24px;
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 22px;
+    }
+
+    .links {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .link {
+      font-size: 12px;
+      color: var(--accent);
+      text-decoration: none;
+      padding: 6px 10px;
+      border: 1px solid #e9d5ff;
+      border-radius: 10px;
+      background: #f5f3ff;
+    }
+
+    .toolbar {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    select, button {
+      padding: 8px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: #fff;
+      font-size: 13px;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: #fff;
+    }
+
+    .btn-primary:hover { background: var(--primary-hover); }
+
+    .status {
+      font-size: 12px;
+      color: var(--muted);
+      margin-left: auto;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .stat-card {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px;
+      background: #fff;
+    }
+
+    .stat-title {
+      margin: 0 0 6px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .stat-value {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+
+    th, td {
+      border: 1px solid var(--border);
+      padding: 6px;
+      vertical-align: top;
+    }
+
+    th {
+      background: #fafafa;
+      text-align: left;
+      font-weight: 600;
+    }
+
+    .muted {
+      color: var(--muted);
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="card">
+      <div class="header">
+        <h1>Админка — аналитика</h1>
+        <div class="links">
+          <a class="link" href="/admin.html">Задания</a>
+          <a class="link" href="/filters.html">План</a>
+          <a class="link" href="/">Качалка</a>
+        </div>
+      </div>
+
+      <div class="toolbar">
+        <label>
+          Период
+          <select id="rangeSelect">
+            <option value="1">за сутки</option>
+            <option value="7" selected>за 7 дней</option>
+            <option value="30">за 30 дней</option>
+            <option value="90">за 90 дней</option>
+            <option value="0">за все время</option>
+          </select>
+        </label>
+        <label>
+          Событие
+          <select id="eventSelect">
+            <option value="">Все</option>
+          </select>
+        </label>
+        <label>
+          Предмет
+          <select id="subjectSelect">
+            <option value="">Все</option>
+          </select>
+        </label>
+        <button class="btn-primary" id="reloadButton">Обновить</button>
+        <span class="status" id="status"></span>
+      </div>
+
+      <div class="grid" id="summaryCards"></div>
+
+      <h3>События (последние 100)</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Время</th>
+            <th>Событие</th>
+            <th>Пользователь</th>
+            <th>Предмет</th>
+            <th>Детали</th>
+          </tr>
+        </thead>
+        <tbody id="eventsBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    let allEvents = [];
+
+    function setStatus(text) {
+      document.getElementById("status").innerText = text || "";
+    }
+
+    function formatDate(value) {
+      if (!value) return "—";
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return value;
+      return date.toLocaleString("ru-RU");
+    }
+
+    function getSubjectFromEvent(event) {
+      if (!event || !event.properties) return "";
+      return event.properties.subject || "";
+    }
+
+    function getRangeLimit() {
+      const raw = document.getElementById("rangeSelect").value;
+      const days = Number(raw);
+      return Number.isFinite(days) ? days : 0;
+    }
+
+    function applyFilters() {
+      const days = getRangeLimit();
+      const eventFilter = document.getElementById("eventSelect").value;
+      const subjectFilter = document.getElementById("subjectSelect").value;
+      const now = Date.now();
+      const minTime = days > 0 ? now - days * 24 * 60 * 60 * 1000 : 0;
+
+      return allEvents.filter((item) => {
+        const ts = Date.parse(item.timestamp || "");
+        if (days > 0 && (!Number.isFinite(ts) || ts < minTime)) return false;
+        if (eventFilter && item.event !== eventFilter) return false;
+        const subject = getSubjectFromEvent(item);
+        if (subjectFilter && subject !== subjectFilter) return false;
+        return true;
+      });
+    }
+
+    function renderSummary(events) {
+      const summary = document.getElementById("summaryCards");
+      summary.innerHTML = "";
+
+      const uniqueUsers = new Set();
+      events.forEach((item) => {
+        if (item.anon_id) uniqueUsers.add(item.anon_id);
+      });
+
+      const totalCard = document.createElement("div");
+      totalCard.className = "stat-card";
+      totalCard.innerHTML = `
+        <p class="stat-title">Всего событий</p>
+        <div class="stat-value">${events.length}</div>
+      `;
+      summary.appendChild(totalCard);
+
+      const usersCard = document.createElement("div");
+      usersCard.className = "stat-card";
+      usersCard.innerHTML = `
+        <p class="stat-title">Уникальных пользователей</p>
+        <div class="stat-value">${uniqueUsers.size}</div>
+      `;
+      summary.appendChild(usersCard);
+
+      const byEvent = {};
+      const bySubject = {};
+      events.forEach((item) => {
+        byEvent[item.event] = (byEvent[item.event] || 0) + 1;
+        const subject = getSubjectFromEvent(item) || "—";
+        bySubject[subject] = (bySubject[subject] || 0) + 1;
+      });
+
+      Object.keys(byEvent).sort().forEach((name) => {
+        const card = document.createElement("div");
+        card.className = "stat-card";
+        card.innerHTML = `
+          <p class="stat-title">${name}</p>
+          <div class="stat-value">${byEvent[name]}</div>
+        `;
+        summary.appendChild(card);
+      });
+
+      Object.keys(bySubject).sort().forEach((name) => {
+        const card = document.createElement("div");
+        card.className = "stat-card";
+        card.innerHTML = `
+          <p class="stat-title">Предмет: ${name}</p>
+          <div class="stat-value">${bySubject[name]}</div>
+        `;
+        summary.appendChild(card);
+      });
+    }
+
+    function renderEvents(events) {
+      const body = document.getElementById("eventsBody");
+      body.innerHTML = "";
+
+      const sorted = [...events].sort((a, b) => {
+        const aTime = Date.parse(a.timestamp || "");
+        const bTime = Date.parse(b.timestamp || "");
+        return bTime - aTime;
+      });
+
+      sorted.slice(0, 100).forEach((item) => {
+        const row = document.createElement("tr");
+        const subject = getSubjectFromEvent(item) || "—";
+        const details = item.properties ? JSON.stringify(item.properties) : "";
+        row.innerHTML = `
+          <td>${formatDate(item.timestamp)}</td>
+          <td>${item.event || "—"}</td>
+          <td>${item.anon_id || "—"}</td>
+          <td>${subject}</td>
+          <td class="muted">${details}</td>
+        `;
+        body.appendChild(row);
+      });
+    }
+
+    function rebuildSelectors() {
+      const eventSelect = document.getElementById("eventSelect");
+      const subjectSelect = document.getElementById("subjectSelect");
+      const events = new Set();
+      const subjects = new Set();
+
+      allEvents.forEach((item) => {
+        if (item.event) events.add(item.event);
+        const subject = getSubjectFromEvent(item);
+        if (subject) subjects.add(subject);
+      });
+
+      const currentEvent = eventSelect.value;
+      const currentSubject = subjectSelect.value;
+
+      eventSelect.innerHTML = `<option value="">Все</option>`;
+      [...events].sort().forEach((name) => {
+        const opt = document.createElement("option");
+        opt.value = name;
+        opt.textContent = name;
+        eventSelect.appendChild(opt);
+      });
+      eventSelect.value = currentEvent;
+
+      subjectSelect.innerHTML = `<option value="">Все</option>`;
+      [...subjects].sort().forEach((name) => {
+        const opt = document.createElement("option");
+        opt.value = name;
+        opt.textContent = name;
+        subjectSelect.appendChild(opt);
+      });
+      subjectSelect.value = currentSubject;
+    }
+
+    function refreshView() {
+      const filtered = applyFilters();
+      renderSummary(filtered);
+      renderEvents(filtered);
+    }
+
+    async function loadAnalytics() {
+      setStatus("Загрузка...");
+      const res = await fetch("/api/analytics");
+      if (!res.ok) {
+        setStatus("Ошибка загрузки");
+        return;
+      }
+      allEvents = await res.json();
+      rebuildSelectors();
+      refreshView();
+      setStatus(`Событий: ${allEvents.length}`);
+    }
+
+    document.getElementById("rangeSelect").addEventListener("change", refreshView);
+    document.getElementById("eventSelect").addEventListener("change", refreshView);
+    document.getElementById("subjectSelect").addEventListener("change", refreshView);
+    document.getElementById("reloadButton").addEventListener("click", loadAnalytics);
+
+    loadAnalytics();
+  </script>
+</body>
+</html>

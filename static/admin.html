@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Админка — Качалка</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f5f3ff;
+      --card: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --primary: #7c3aed;
+      --primary-hover: #6d28d9;
+      --accent: #4c1d95;
+      --border: #e5e7eb;
+      --shadow: 0 16px 32px rgba(15, 23, 42, 0.12);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, Arial, sans-serif;
+      background-color: var(--bg);
+      background-image:
+        linear-gradient(rgba(245, 243, 255, 0.92), rgba(245, 243, 255, 0.92)),
+        url("/bg.jpg");
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      color: var(--text);
+    }
+
+    .page {
+      min-height: 100vh;
+      padding: 32px 16px;
+    }
+
+    .card {
+      width: 100%;
+      max-width: 1100px;
+      margin: 0 auto;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+      padding: 24px;
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 22px;
+    }
+
+    .links {
+      display: flex;
+      gap: 8px;
+    }
+
+    .link {
+      font-size: 12px;
+      color: var(--accent);
+      text-decoration: none;
+      padding: 6px 10px;
+      border: 1px solid #e9d5ff;
+      border-radius: 10px;
+      background: #f5f3ff;
+    }
+
+    .toolbar {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      padding: 8px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: #fff;
+      cursor: pointer;
+      font-size: 13px;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: #fff;
+    }
+    .btn-primary:hover { background: var(--primary-hover); }
+
+    .status {
+      margin-left: auto;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .file-input {
+      display: none;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+
+    th, td {
+      border: 1px solid var(--border);
+      padding: 6px;
+      vertical-align: top;
+    }
+
+    th {
+      background: #fafafa;
+      text-align: left;
+      font-weight: 600;
+    }
+
+    input, textarea {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 6px 8px;
+      font-size: 12px;
+      font-family: inherit;
+    }
+
+    textarea {
+      min-height: 90px;
+      resize: vertical;
+    }
+
+    .row-actions {
+      display: flex;
+      justify-content: center;
+    }
+
+    .upload-wrap {
+      display: grid;
+      gap: 6px;
+    }
+
+    .upload-input {
+      display: none;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .editor-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.45);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 30;
+    }
+
+    .editor-modal {
+      width: 100%;
+      max-width: 720px;
+      background: #fff;
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      padding: 16px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .editor-modal textarea {
+      min-height: 240px;
+    }
+
+    .editor-actions {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="card">
+      <div class="header">
+        <h1>Админка заданий</h1>
+        <div class="links">
+          <a class="link" href="/admin-analytics.html">Аналитика</a>
+          <a class="link" href="/filters.html">План</a>
+          <a class="link" href="/">Качалка</a>
+        </div>
+      </div>
+
+      <div class="toolbar">
+        <button class="btn btn-primary" onclick="saveTasks()">Сохранить</button>
+        <button class="btn" onclick="addTask()">Добавить</button>
+        <button class="btn" onclick="document.getElementById('importFile').click()">Импорт</button>
+        <button class="btn" onclick="loadTasks()">Обновить</button>
+        <span id="status" class="status"></span>
+      </div>
+      <input id="importFile" class="file-input" type="file" accept="application/json">
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Вопрос</th>
+              <th>Картинка</th>
+              <th>Предмет</th>
+              <th>№ в экзамене</th>
+              <th>Подтема</th>
+              <th>ЕГЭ/ОГЭ</th>
+              <th>Ответ</th>
+              <th>Решение</th>
+              <th></th>
+            </tr>
+            <tr>
+              <th><input id="filterId" placeholder="Фильтр"></th>
+              <th><input id="filterQuestion" placeholder="Фильтр"></th>
+              <th><input id="filterImage" placeholder="Фильтр"></th>
+              <th><input id="filterSubject" placeholder="Фильтр"></th>
+              <th><input id="filterExamNumber" placeholder="Фильтр"></th>
+              <th><input id="filterSubtopic" placeholder="Фильтр"></th>
+              <th><input id="filterExamType" placeholder="Фильтр"></th>
+              <th><input id="filterAnswer" placeholder="Фильтр"></th>
+              <th><input id="filterSolution" placeholder="Фильтр"></th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="tasksBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div id="editorBackdrop" class="editor-backdrop hidden">
+    <div class="editor-modal">
+      <strong id="editorTitle">Редактирование</strong>
+      <textarea id="editorTextarea"></textarea>
+      <div class="editor-actions">
+        <button class="btn" id="editorCancel" type="button">Отмена</button>
+        <button class="btn btn-primary" id="editorSave" type="button">Сохранить</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let tasks = [];
+    let subjectOptions = [];
+    let activeEditorField = null;
+
+    function setStatus(text) {
+      document.getElementById("status").innerText = text || "";
+    }
+
+    async function loadTasks() {
+      setStatus("Загрузка...");
+      await loadSubjects();
+      const res = await fetch("/api/tasks");
+      if (!res.ok) {
+        setStatus("Ошибка загрузки");
+        return;
+      }
+      tasks = await res.json();
+      renderTable();
+      setStatus("Готово");
+    }
+
+    async function loadSubjects() {
+      const res = await fetch("/api/filters");
+      if (!res.ok) return;
+      const data = await res.json();
+      subjectOptions = Array.isArray(data.subjects) ? data.subjects : [];
+    }
+
+    function renderTable() {
+      const body = document.getElementById("tasksBody");
+      body.innerHTML = "";
+      const filtered = applyFilters(tasks);
+      filtered.forEach((task) => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td><input data-field="id" data-id="${task.id}" type="number" value="${task.id ?? ""}"></td>
+          <td><textarea data-field="question" data-id="${task.id}">${task.question ?? ""}</textarea></td>
+          <td>
+            <div class="upload-wrap">
+              <input data-field="imageUrl" data-id="${task.id}" value="${task.imageUrl ?? ""}">
+              <button class="btn" type="button" onclick="triggerUpload(${task.id})">Загрузить</button>
+              <input class="upload-input" data-upload="${task.id}" type="file" accept="image/*">
+            </div>
+          </td>
+          <td>
+            <select data-field="subject" data-id="${task.id}">
+              ${renderSubjectOptions(task.subject)}
+            </select>
+          </td>
+          <td><input data-field="examTaskNumber" data-id="${task.id}" type="number" value="${task.examTaskNumber ?? ""}"></td>
+          <td><input data-field="subtopic" data-id="${task.id}" value="${task.subtopic ?? ""}"></td>
+          <td><input data-field="examType" data-id="${task.id}" value="${task.examType ?? ""}"></td>
+          <td><input data-field="answer" data-id="${task.id}" value="${task.answer ?? ""}"></td>
+          <td><textarea data-field="solution" data-id="${task.id}">${task.solution ?? ""}</textarea></td>
+          <td class="row-actions"><button class="btn" onclick="removeTask(${task.id})">Удалить</button></td>
+        `;
+        body.appendChild(row);
+      });
+
+      document.querySelectorAll("[data-upload]").forEach((input) => {
+        input.addEventListener("change", handleUpload);
+      });
+      document.querySelectorAll("textarea[data-field]").forEach((textarea) => {
+        textarea.addEventListener("dblclick", openEditor);
+      });
+    }
+
+    function applyFilters(items) {
+      const filters = {
+        id: document.getElementById("filterId").value.trim().toLowerCase(),
+        question: document.getElementById("filterQuestion").value.trim().toLowerCase(),
+        imageUrl: document.getElementById("filterImage").value.trim().toLowerCase(),
+        subject: document.getElementById("filterSubject").value.trim().toLowerCase(),
+        examTaskNumber: document.getElementById("filterExamNumber").value.trim().toLowerCase(),
+        subtopic: document.getElementById("filterSubtopic").value.trim().toLowerCase(),
+        examType: document.getElementById("filterExamType").value.trim().toLowerCase(),
+        answer: document.getElementById("filterAnswer").value.trim().toLowerCase(),
+        solution: document.getElementById("filterSolution").value.trim().toLowerCase()
+      };
+
+      return items.filter((task) => {
+        if (filters.id && !String(task.id ?? "").toLowerCase().includes(filters.id)) return false;
+        if (filters.question && !String(task.question ?? "").toLowerCase().includes(filters.question)) return false;
+        if (filters.imageUrl && !String(task.imageUrl ?? "").toLowerCase().includes(filters.imageUrl)) return false;
+        if (filters.subject && !String(task.subject ?? "").toLowerCase().includes(filters.subject)) return false;
+        if (filters.examTaskNumber && !String(task.examTaskNumber ?? "").toLowerCase().includes(filters.examTaskNumber)) return false;
+        if (filters.subtopic && !String(task.subtopic ?? "").toLowerCase().includes(filters.subtopic)) return false;
+        if (filters.examType && !String(task.examType ?? "").toLowerCase().includes(filters.examType)) return false;
+        if (filters.answer && !String(task.answer ?? "").toLowerCase().includes(filters.answer)) return false;
+        if (filters.solution && !String(task.solution ?? "").toLowerCase().includes(filters.solution)) return false;
+        return true;
+      });
+    }
+
+    function renderSubjectOptions(current) {
+      const options = [];
+      options.push(`<option value="">Выбрать</option>`);
+      subjectOptions.forEach((subject) => {
+        const selected = subject === current ? " selected" : "";
+        options.push(`<option value="${escapeHtml(subject)}"${selected}>${escapeHtml(subject)}</option>`);
+      });
+      return options.join("");
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#39;");
+    }
+
+    function openEditor(event) {
+      event.preventDefault();
+      activeEditorField = event.target;
+      const field = activeEditorField.getAttribute("data-field");
+      document.getElementById("editorTitle").innerText =
+        field === "question" ? "Редактирование вопроса" : "Редактирование решения";
+      document.getElementById("editorTextarea").value = activeEditorField.value;
+      document.getElementById("editorBackdrop").classList.remove("hidden");
+    }
+
+    function closeEditor() {
+      document.getElementById("editorBackdrop").classList.add("hidden");
+      activeEditorField = null;
+    }
+
+    function saveEditor() {
+      if (activeEditorField) {
+        activeEditorField.value = document.getElementById("editorTextarea").value;
+      }
+      closeEditor();
+    }
+
+    function collectTasks() {
+      const body = document.getElementById("tasksBody");
+      const rows = Array.from(body.querySelectorAll("tr"));
+      return rows.map((row) => {
+        const get = (field) => row.querySelector(`[data-field="${field}"]`);
+        return {
+          id: Number(get("id").value),
+          question: get("question").value.trim(),
+          imageUrl: get("imageUrl").value.trim(),
+          subject: get("subject").value.trim(),
+          examTaskNumber: Number(get("examTaskNumber").value),
+          subtopic: get("subtopic").value.trim(),
+          examType: get("examType").value.trim(),
+          answer: get("answer").value.trim(),
+          solution: get("solution").value.trim()
+        };
+      });
+    }
+
+    async function saveTasks() {
+      const payload = collectTasks();
+      setStatus("Сохранение...");
+      const res = await fetch("/api/tasks", {
+        method: "PUT",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify(payload)
+      });
+      if (!res.ok) {
+        const text = await res.text();
+        setStatus("Ошибка: " + text);
+        return;
+      }
+      setStatus("Сохранено");
+    }
+
+    function addTask() {
+      const maxId = tasks.reduce((max, task) => Math.max(max, Number(task.id) || 0), 0);
+      tasks.push({
+        id: maxId + 1,
+        question: "",
+        imageUrl: "",
+        subject: "",
+        examTaskNumber: 1,
+        subtopic: "",
+        examType: "ЕГЭ",
+        answer: 0,
+        solution: ""
+      });
+      renderTable();
+    }
+
+    function removeTask(taskId) {
+      const originalIndex = tasks.findIndex((item) => item.id === taskId);
+      if (originalIndex === -1) return;
+      tasks.splice(originalIndex, 1);
+      renderTable();
+    }
+
+    function triggerUpload(taskId) {
+      const input = document.querySelector(`[data-upload="${taskId}"]`);
+      if (input) input.click();
+    }
+
+    async function handleUpload(event) {
+      const file = event.target.files[0];
+      const taskId = Number(event.target.getAttribute("data-upload"));
+      if (!file || !taskId) return;
+      setStatus("Загрузка картинки...");
+      const formData = new FormData();
+      formData.append("file", file);
+      try {
+        const res = await fetch("/api/upload", {
+          method: "POST",
+          body: formData
+        });
+        if (!res.ok) {
+          setStatus("Ошибка загрузки");
+          return;
+        }
+        const data = await res.json();
+        const field = document.querySelector(`[data-field="imageUrl"][data-id="${taskId}"]`);
+        if (field && data.url) {
+          field.value = data.url;
+          setStatus("Картинка загружена. Нажмите «Сохранить»");
+        }
+      } finally {
+        event.target.value = "";
+      }
+    }
+
+    function isValidTasks(data) {
+      return Array.isArray(data) && data.every((item) => typeof item === "object" && item !== null);
+    }
+
+    document.getElementById("importFile").addEventListener("change", (event) => {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const parsed = JSON.parse(String(reader.result));
+          if (!isValidTasks(parsed)) {
+            setStatus("Неверный формат файла");
+            return;
+          }
+          tasks = parsed;
+          renderTable();
+          setStatus("Импортировано. Нажмите «Сохранить»");
+        } catch (error) {
+          setStatus("Ошибка чтения JSON");
+        } finally {
+          event.target.value = "";
+        }
+      };
+      reader.readAsText(file);
+    });
+
+    document.getElementById("editorCancel").addEventListener("click", closeEditor);
+    document.getElementById("editorSave").addEventListener("click", saveEditor);
+    document.getElementById("editorBackdrop").addEventListener("click", (event) => {
+      if (event.target.id === "editorBackdrop") closeEditor();
+    });
+    document.getElementById("editorTextarea").addEventListener("keydown", (event) => {
+      if (event.key === "Escape") closeEditor();
+      if ((event.ctrlKey || event.metaKey) && event.key === "Enter") saveEditor();
+    });
+
+    loadTasks();
+  </script>
+</body>
+</html>

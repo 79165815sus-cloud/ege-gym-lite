@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>План на тренировку — Качалка</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f5f3ff;
+      --card: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --primary: #7c3aed;
+      --primary-hover: #6d28d9;
+      --accent: #4c1d95;
+      --border: #e5e7eb;
+      --shadow: 0 16px 32px rgba(15, 23, 42, 0.12);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, Arial, sans-serif;
+      background-color: var(--bg);
+      background-image:
+        linear-gradient(rgba(245, 243, 255, 0.92), rgba(245, 243, 255, 0.92)),
+        url("/bg.jpg");
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      color: var(--text);
+    }
+
+    .page {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 32px 16px;
+    }
+
+    .card {
+      width: 100%;
+      max-width: 640px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+      padding: 28px;
+      position: relative;
+    }
+
+    h1 {
+      margin: 0 0 6px;
+      font-size: 24px;
+      letter-spacing: -0.01em;
+    }
+
+    .subtitle {
+      margin: 0 0 20px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .field {
+      margin-bottom: 14px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 12px;
+      color: var(--accent);
+      letter-spacing: 0.02em;
+    }
+
+    .exam-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .switch {
+      position: relative;
+      width: 54px;
+      height: 30px;
+      border-radius: 999px;
+      background: #ede9fe;
+      border: 1px solid #ddd6fe;
+      cursor: pointer;
+      transition: background 0.2s ease, border-color 0.2s ease;
+      flex-shrink: 0;
+    }
+
+    .switch input {
+      position: absolute;
+      opacity: 0;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      cursor: pointer;
+      z-index: 2;
+    }
+
+    .switch input:checked + .switch-visual {
+      background: #ddd6fe;
+      border-color: #c4b5fd;
+    }
+
+    .switch input:checked + .switch-visual::after {
+      transform: translateX(26px);
+    }
+
+    .switch-visual {
+      position: absolute;
+      inset: 0;
+      border-radius: 999px;
+      background: #ede9fe;
+      border: 1px solid #ddd6fe;
+      transition: background 0.2s ease, border-color 0.2s ease;
+      pointer-events: none;
+    }
+
+    .switch-visual::after {
+      content: "";
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      width: 22px;
+      height: 22px;
+      border-radius: 999px;
+      background: #fff;
+      box-shadow: 0 6px 12px rgba(15, 23, 42, 0.15);
+      transition: transform 0.2s ease;
+    }
+
+    .exam-labels {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .exam-labels strong {
+      color: var(--accent);
+      font-size: 13px;
+    }
+
+    .mode-labels {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .mode-labels strong {
+      color: var(--accent);
+      font-size: 13px;
+    }
+
+    select {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      font-size: 14px;
+      background: #fff;
+    }
+
+    .row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 16px;
+    }
+
+    .btn {
+      padding: 10px 14px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: #fff;
+      cursor: pointer;
+      font-size: 14px;
+      transition: transform 0.05s ease, background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: #fff;
+    }
+    .btn-primary:hover { background: var(--primary-hover); }
+
+    .btn-ghost {
+      background: transparent;
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    .btn-ghost:hover { background: #f5f3ff; }
+
+    .hidden {
+      display: none !important;
+    }
+
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="card">
+      <h1>План на тренировку</h1>
+      <p class="subtitle">Выберите параметры, чтобы собрать подходящие задания</p>
+
+      <div class="field">
+        <div class="exam-toggle">
+          <div class="switch" role="switch" aria-label="ЕГЭ или ОГЭ">
+            <input type="checkbox" id="examSwitch" aria-label="ЕГЭ или ОГЭ">
+            <div class="switch-visual"></div>
+          </div>
+          <div class="exam-labels">
+            <strong id="examTypeText">ОГЭ</strong>
+            <span>переключить на ЕГЭ</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="field">
+        <div class="exam-toggle">
+          <div class="switch" role="switch" aria-label="Отдельные варианты или пробники">
+            <input type="checkbox" id="modeSwitch" aria-label="Отдельные варианты или пробники">
+            <div class="switch-visual"></div>
+          </div>
+          <div class="mode-labels">
+            <strong id="modeText">Отдельные задания</strong>
+            <span>переключить на Пробники</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="subject">Предмет</label>
+        <select id="subject">
+          <option value="">Любой</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="examTaskNumber">Номер задания в экзамене</label>
+        <select id="examTaskNumber">
+          <option value="">Любой</option>
+        </select>
+      </div>
+
+      <div class="field hidden" id="variantField">
+        <label for="variantNumber">Вариант</label>
+        <select id="variantNumber">
+          <option value="">Любой</option>
+          <option value="1">Вариант 1</option>
+          <option value="2">Вариант 2</option>
+          <option value="3">Вариант 3</option>
+          <option value="4">Вариант 4</option>
+          <option value="5">Вариант 5</option>
+        </select>
+      </div>
+
+      <div class="field" id="taskCountField">
+        <label for="taskCount">Кол-во заданий</label>
+        <select id="taskCount">
+          <option value="">Любое</option>
+          <option value="1">1</option>
+          <option value="5">5</option>
+          <option value="10" selected>10</option>
+          <option value="15">15</option>
+          <option value="19">19</option>
+          <option value="20">20</option>
+          <option value="30">30</option>
+          <option value="40">40</option>
+          <option value="50">50</option>
+          <option value="60">60</option>
+          <option value="70">70</option>
+          <option value="80">80</option>
+          <option value="90">90</option>
+          <option value="100">100</option>
+        </select>
+      </div>
+
+      <div class="row">
+        <button class="btn btn-primary" onclick="applyFilters()">Начать</button>
+        <button class="btn btn-ghost" onclick="resetFilters()">Сбросить</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let filtersData = null;
+
+    async function loadFilters() {
+      const res = await fetch("/api/filters");
+      if (!res.ok) return;
+      filtersData = await res.json();
+
+      fillSelect("subject", ["Математика профиль", "Русский язык"]);
+      const subjectSelect = document.getElementById("subject");
+      subjectSelect.value = "Математика профиль";
+      updateExamTaskOptions();
+    }
+
+    function fillSelect(id, items) {
+      const select = document.getElementById(id);
+      if (!Array.isArray(items)) return;
+      items.forEach((value) => {
+        const option = document.createElement("option");
+        option.value = value;
+        option.textContent = value;
+        select.appendChild(option);
+      });
+    }
+
+    function updateExamTaskOptions() {
+      const examSelect = document.getElementById("examTaskNumber");
+      const subject = document.getElementById("subject").value;
+      const examSwitch = document.getElementById("examSwitch");
+      const previous = examSelect.value;
+      examSelect.innerHTML = "<option value=\"\">Любой</option>";
+
+      let options = [];
+      if (subject === "Математика профиль") {
+        options = Array.from({ length: 19 }, (_, i) => i + 1);
+        if (!examSwitch.checked) {
+          examSwitch.checked = true;
+          updateExamTypeText();
+        }
+      } else if (subject === "Русский язык") {
+        if (!examSwitch.checked) {
+          examSwitch.checked = true;
+          updateExamTypeText();
+        }
+      } else if (filtersData && Array.isArray(filtersData.examTaskNumbers)) {
+        options = filtersData.examTaskNumbers;
+      }
+
+      options.forEach((value) => {
+        const option = document.createElement("option");
+        option.value = value;
+        option.textContent = value;
+        examSelect.appendChild(option);
+      });
+
+      if (previous && [...examSelect.options].some((opt) => opt.value === previous)) {
+        examSelect.value = previous;
+      }
+    }
+
+    function getVariantCountBySubject(subject) {
+      if (subject === "Русский язык") return "27";
+      if (subject === "Математика профиль") return "19";
+      return "";
+    }
+
+    function applyFilters() {
+      const params = new URLSearchParams();
+      const examSwitch = document.getElementById("examSwitch");
+      const modeSwitch = document.getElementById("modeSwitch");
+      const examType = examSwitch.checked ? "ЕГЭ" : "ОГЭ";
+      const subject = document.getElementById("subject").value;
+      const examTaskNumber = document.getElementById("examTaskNumber").value;
+      const taskCountSelect = document.getElementById("taskCount");
+      const taskCount = taskCountSelect.value;
+      const variantNumber = document.getElementById("variantNumber").value;
+
+      if (examType) params.set("examType", examType);
+      if (subject) params.set("subject", subject);
+      if (modeSwitch.checked) {
+        params.set("sequence", "1");
+        const variantCount = getVariantCountBySubject(subject);
+        if (variantCount) params.set("count", variantCount);
+        if (variantNumber) params.set("variant", variantNumber);
+      } else {
+      if (examTaskNumber) params.set("examTaskNumber", examTaskNumber);
+        if (taskCount) params.set("count", taskCount);
+      }
+
+      const url = params.toString() ? "/?" + params.toString() : "/";
+      window.location.href = url;
+    }
+
+    function resetFilters() {
+      document.getElementById("examSwitch").checked = false;
+      updateExamTypeText();
+      document.getElementById("subject").value = "";
+      document.getElementById("examTaskNumber").value = "";
+      document.getElementById("taskCount").value = "";
+    }
+
+    function updateExamTypeText() {
+      const examSwitch = document.getElementById("examSwitch");
+      const label = document.getElementById("examTypeText");
+      const hint = label.nextElementSibling;
+      if (examSwitch.checked) {
+        label.innerText = "ЕГЭ";
+        if (hint) hint.innerText = "переключить на ОГЭ";
+      } else {
+        label.innerText = "ОГЭ";
+        if (hint) hint.innerText = "переключить на ЕГЭ";
+      }
+    }
+
+    function updateModeText() {
+      const modeSwitch = document.getElementById("modeSwitch");
+      const label = document.getElementById("modeText");
+      const hint = label.nextElementSibling;
+      if (modeSwitch.checked) {
+        label.innerText = "Пробники";
+        if (hint) hint.innerText = "переключить на Отдельные задания";
+      } else {
+        label.innerText = "Отдельные задания";
+        if (hint) hint.innerText = "переключить на Пробники";
+      }
+    }
+
+    function handleExamTaskChange() {
+      const examTaskNumber = document.getElementById("examTaskNumber").value;
+      const taskCountSelect = document.getElementById("taskCount");
+      // no-op
+    }
+
+    function updateModeVisibility() {
+      const modeSwitch = document.getElementById("modeSwitch");
+      const examField = document.getElementById("examTaskNumber").closest(".field");
+      const variantField = document.getElementById("variantField");
+      const taskCountField = document.getElementById("taskCountField");
+      if (modeSwitch.checked) {
+        examField.classList.add("hidden");
+        variantField.classList.remove("hidden");
+        taskCountField.classList.add("hidden");
+      } else {
+        examField.classList.remove("hidden");
+        variantField.classList.add("hidden");
+        taskCountField.classList.remove("hidden");
+      }
+    }
+
+    document.getElementById("subject").addEventListener("change", updateExamTaskOptions);
+    document.getElementById("examTaskNumber").addEventListener("change", handleExamTaskChange);
+    document.getElementById("examSwitch").addEventListener("change", updateExamTypeText);
+    document.getElementById("modeSwitch").addEventListener("change", () => {
+      updateModeText();
+      updateModeVisibility();
+    });
+    updateExamTypeText();
+    updateModeText();
+    updateModeVisibility();
+    loadFilters();
+  </script>
+</body>
+</html>

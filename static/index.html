@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Качалка</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f5f3ff;
+      --card: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --primary: #7c3aed;
+      --primary-hover: #6d28d9;
+      --accent: #4c1d95;
+      --ok: #16a34a;
+      --bad: #b91c1c;
+      --border: #e5e7eb;
+      --shadow: 0 16px 32px rgba(15, 23, 42, 0.12);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, Arial, sans-serif;
+      background-color: var(--bg);
+      background-image:
+        linear-gradient(rgba(245, 243, 255, 0.92), rgba(245, 243, 255, 0.92)),
+        url("/bg.jpg");
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      color: var(--text);
+    }
+
+    .page {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 32px 16px;
+    }
+
+    .card {
+      width: 100%;
+      max-width: 640px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+      padding: 28px;
+      position: relative;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 6px;
+    }
+
+    .brand-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .filters-link {
+      font-size: 12px;
+      color: var(--accent);
+      text-decoration: none;
+      padding: 6px 10px;
+      border: 1px solid #e9d5ff;
+      border-radius: 10px;
+      background: #f5f3ff;
+      transition: background 0.15s ease, border-color 0.15s ease;
+      white-space: nowrap;
+    }
+
+    .filters-link:hover {
+      background: #ede9fe;
+      border-color: #ddd6fe;
+    }
+
+    .badge {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: var(--primary);
+      color: #fff;
+      font-weight: 800;
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 10px 20px rgba(124, 58, 237, 0.3);
+      letter-spacing: -0.02em;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 28px;
+      letter-spacing: -0.01em;
+    }
+
+    .subtitle {
+      margin: 0 0 20px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .meta {
+      margin: 0 0 8px;
+      color: var(--accent);
+      font-size: 12px;
+      letter-spacing: 0.02em;
+    }
+
+    .plan {
+      margin: 0 0 12px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .chain {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 0 0 16px;
+      flex-wrap: wrap;
+    }
+
+    .chain-item {
+      width: 28px;
+      height: 28px;
+      border-radius: 999px;
+      border: 1px solid #ddd6fe;
+      background: #f5f3ff;
+      color: var(--accent);
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      padding: 0;
+    }
+
+    .chain-item.active {
+      background: var(--primary);
+      color: #fff;
+      border-color: var(--primary);
+    }
+
+    .chain-item.done {
+      background: #ede9fe;
+      color: #4c1d95;
+      border-color: #c4b5fd;
+    }
+
+    .chain-line {
+      width: 18px;
+      height: 2px;
+      background: #ddd6fe;
+      border-radius: 2px;
+    }
+
+    .question {
+      margin: 0 0 16px;
+      padding: 14px 16px;
+      background: #f5f3ff;
+      border: 1px solid #ddd6fe;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 500;
+      text-indent: 24px;
+      line-height: 1.5;
+      white-space: pre-wrap;
+    }
+
+    .question-image {
+      width: 100%;
+      max-height: 260px;
+      object-fit: contain;
+      border-radius: 12px;
+      border: 1px solid #e9d5ff;
+      margin: 0 0 16px;
+      background: #fff;
+    }
+
+    .row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+
+    input[type="number"] {
+      flex: 1 1 140px;
+      min-width: 140px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      font-size: 16px;
+      outline: none;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+      background: #fff;
+    }
+
+    input[type="number"]:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.18);
+    }
+
+
+    .btn {
+      padding: 10px 14px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: #fff;
+      cursor: pointer;
+      font-size: 14px;
+      transition: transform 0.05s ease, background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+    }
+
+    .btn:hover { background: #f8fafc; }
+    .btn:active { transform: translateY(1px); }
+
+    .btn-primary {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: #fff;
+    }
+    .btn-primary:hover { background: var(--primary-hover); }
+
+    .btn-ghost {
+      background: transparent;
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    .btn-ghost:hover { background: #f5f3ff; }
+
+    .btn-soft {
+      background: #f5f3ff;
+      border-color: #e9d5ff;
+      color: var(--accent);
+    }
+    .btn-soft:hover { background: #ede9fe; }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .menu {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      z-index: 20;
+    }
+
+    .menu-button {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      border: 1px solid #e9d5ff;
+      background: #fff;
+      cursor: pointer;
+      font-size: 20px;
+      line-height: 1;
+      color: var(--accent);
+    }
+
+    .menu-list {
+      position: absolute;
+      top: 44px;
+      right: 0;
+      min-width: 160px;
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      box-shadow: var(--shadow);
+      padding: 6px;
+      display: grid;
+      gap: 4px;
+    }
+
+    .menu-item {
+      padding: 8px 10px;
+      border-radius: 8px;
+      color: var(--accent);
+      text-decoration: none;
+      font-size: 14px;
+    }
+
+    .menu-item:hover {
+      background: #f5f3ff;
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.45);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 10;
+    }
+
+    .modal {
+      width: 100%;
+      max-width: 420px;
+      background: #fff;
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      padding: 20px;
+      text-align: center;
+    }
+
+    .modal h2 {
+      margin: 0 0 8px;
+      font-size: 18px;
+    }
+
+    .modal p {
+      margin: 0 0 16px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .modal-illustration {
+      width: 100%;
+      max-width: 240px;
+      height: auto;
+      margin: 0 auto 12px;
+      display: block;
+      filter: drop-shadow(0 10px 18px rgba(124, 58, 237, 0.25));
+    }
+
+    .modal-title {
+      color: var(--accent);
+      font-weight: 700;
+    }
+
+    .result {
+      margin: 12px 0 0;
+      font-weight: 600;
+    }
+
+    .result.ok { color: var(--ok); }
+    .result.bad { color: var(--bad); }
+
+    .hint {
+      margin: 6px 0 0;
+      color: #5b4b8a;
+      background: #f3e8ff;
+      border: 1px solid #e9d5ff;
+      padding: 8px 10px;
+      border-radius: 10px;
+    }
+
+    .divider {
+      height: 1px;
+      background: var(--border);
+      margin: 16px 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="card">
+      <div class="menu">
+        <button id="menuButton" class="menu-button" type="button">⋯</button>
+        <div id="menuList" class="menu-list hidden">
+          <a class="menu-item" href="#" id="shareLink">Поделиться</a>
+          <a class="menu-item" href="mailto:support@100points.ru?subject=Сообщить%20об%20ошибке&body=Опишите%20проблему%20и%20укажите%20ссылку:" id="reportLink">Сообщить об ошибке</a>
+        </div>
+      </div>
+      <div class="brand-header">
+        <div class="brand">
+          <div class="badge">100</div>
+          <div>
+            <h1>Качалка</h1>
+            <p class="subtitle">«Вижу цель — не вижу препятствий» — Джейсон Стетхем</p>
+          </div>
+        </div>
+        <a class="filters-link" href="/filters.html">Начать заново</a>
+      </div>
+
+      <p id="meta" class="meta"></p>
+      <p id="planInfo" class="plan"></p>
+      <p id="question" class="question">Загрузка...</p>
+      <img id="questionImage" class="question-image hidden" alt="Иллюстрация к заданию">
+
+      <div class="row">
+        <input id="answer" type="number" placeholder="Введите ответ"/>
+        <button class="btn btn-primary" onclick="check()">Проверить</button>
+        <button class="btn btn-ghost" onclick="load()">Следующая</button>
+      </div>
+
+      <div class="row">
+        <button class="btn btn-soft" onclick="showAnswer()">Ответ</button>
+        <button class="btn btn-soft hidden" id="solutionButton" onclick="showSolution()">Решение</button>
+      </div>
+
+      <div id="chain" class="chain"></div>
+
+      <div class="divider"></div>
+
+      <p id="result" class="result"></p>
+      <p id="answerText" class="hint hidden"></p>
+      <p id="solutionText" class="hint hidden"></p>
+    </div>
+  </div>
+
+  <div id="promoModal" class="modal-backdrop hidden">
+    <div class="modal">
+      <h2>Бонус за старт</h2>
+      <img class="modal-illustration" src="/bg.jpg" alt="Подарок">
+      <p>Сделай 5 заданий и забери подарок от 100‑балльного репетитора.</p>
+      <button class="btn btn-primary" id="promoClose" type="button">Погнали</button>
+    </div>
+  </div>
+
+
+  <script>
+    window.MathJax = {
+      tex: { inlineMath: [['\\(', '\\)'], ['$', '$']] },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+  <script>
+    let currentTask;
+    let remainingCount = null;
+    let totalCount = null;
+    let currentIndex = null;
+    let hasTriedAnswer = false;
+    let promoShown = false;
+    let giftShown = false;
+    let completedCount = 0;
+    let hasLoadedOnce = false;
+    let sequenceTasks = null;
+    const anonId = getAnonId();
+
+    async function load() {
+      const params = new URLSearchParams(window.location.search);
+      const rawCount = params.get("count");
+      const sequence = params.get("sequence") === "1";
+      const startIndexParam = params.get("startIndex");
+      if (remainingCount === null && rawCount && !sequence) {
+        const parsed = Number(rawCount);
+        totalCount = Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+        remainingCount = totalCount;
+      }
+      if (totalCount && startIndexParam && currentIndex === null) {
+        const startIndex = Number(startIndexParam);
+        if (Number.isFinite(startIndex) && startIndex >= 1 && startIndex <= totalCount) {
+          currentIndex = startIndex;
+          remainingCount = totalCount - startIndex + 1;
+        }
+      }
+
+      if (hasLoadedOnce) {
+        completedCount += 1;
+      }
+      hasLoadedOnce = true;
+      if (!giftShown && completedCount >= 5) {
+        showGift();
+      }
+
+      if (remainingCount !== null && remainingCount <= 0) {
+        if (!giftShown) showGift();
+        return;
+      }
+
+      if (sequence) {
+        if (!sequenceTasks) {
+          const listParams = new URLSearchParams(params.toString());
+          listParams.delete("count");
+          listParams.delete("sequence");
+          const listUrl = listParams.toString() ? "/api/tasks-public?" + listParams.toString() : "/api/tasks-public";
+          const listRes = await fetch(listUrl);
+          if (!listRes.ok) {
+            document.getElementById("question").innerText = "Нет задач под выбранные фильтры.";
+            document.getElementById("meta").innerText = "";
+            document.getElementById("planInfo").innerText = "";
+            return;
+          }
+          sequenceTasks = await listRes.json();
+          if (!totalCount) {
+            totalCount = sequenceTasks.length;
+            remainingCount = totalCount;
+          }
+        }
+        const index = currentIndex ? currentIndex - 1 : 0;
+        currentTask = sequenceTasks[index];
+      } else {
+      const url = params.toString() ? "/api/task?" + params.toString() : "/api/task";
+        const res = await fetch(url);
+        if (!res.ok) {
+          document.getElementById("question").innerText = "Нет задач под выбранные фильтры.";
+          document.getElementById("meta").innerText = "";
+          document.getElementById("planInfo").innerText = "";
+          return;
+        }
+        currentTask = await res.json();
+      }
+
+      if (!currentTask) {
+        document.getElementById("question").innerText = "Нет задач под выбранные фильтры.";
+        document.getElementById("meta").innerText = "";
+        document.getElementById("planInfo").innerText = "";
+        return;
+      }
+      trackEvent("task_view", {
+        task_id: currentTask.id,
+        subject: currentTask.subject,
+        exam_type: currentTask.examType,
+        exam_task_number: currentTask.examTaskNumber
+      });
+      const metaParts = [];
+      if (currentTask.subject) metaParts.push(currentTask.subject);
+      if (currentTask.examType) metaParts.push(currentTask.examType);
+      if (Number.isFinite(currentTask.examTaskNumber)) {
+        metaParts.push("№" + currentTask.examTaskNumber);
+      }
+      if (currentTask.subtopic) metaParts.push(currentTask.subtopic);
+      document.getElementById("meta").innerText = metaParts.join(" · ");
+      if (remainingCount !== null && totalCount !== null) {
+        if (currentIndex === null) {
+          currentIndex = totalCount - remainingCount + 1;
+        }
+        const remainingAfter = Math.max(remainingCount - 1, 0);
+        document.getElementById("planInfo").innerText =
+          "Задание " + currentIndex + " из " + totalCount +
+          " · Осталось: " + remainingAfter;
+        renderChain(totalCount, currentIndex);
+        if (currentIndex === 1 && !promoShown && !sessionStorage.getItem("promoShown")) {
+          showPromo();
+        }
+      } else {
+        document.getElementById("planInfo").innerText = "";
+        document.getElementById("chain").innerHTML = "";
+      }
+      setMathText(document.getElementById("question"), currentTask.question);
+      const questionImage = document.getElementById("questionImage");
+      if (currentTask.imageUrl) {
+        questionImage.src = currentTask.imageUrl;
+        questionImage.classList.remove("hidden");
+      } else {
+        questionImage.classList.add("hidden");
+        questionImage.removeAttribute("src");
+      }
+      document.getElementById("result").innerText = "";
+      setMathText(document.getElementById("answerText"), "");
+      setMathText(document.getElementById("solutionText"), "");
+      document.getElementById("answerText").classList.add("hidden");
+      document.getElementById("solutionText").classList.add("hidden");
+      document.getElementById("answer").value = "";
+      hasTriedAnswer = false;
+      document.getElementById("solutionButton").classList.add("hidden");
+
+      if (remainingCount !== null) {
+        remainingCount -= 1;
+      }
+    }
+
+    async function check() {
+      hasTriedAnswer = true;
+      document.getElementById("solutionButton").classList.remove("hidden");
+      const answer = document.getElementById("answer").value.trim();
+      recordAttempt();
+      trackEvent("check_answer", { task_id: currentTask.id });
+      const res = await fetch("/api/check", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ id: currentTask.id, answer })
+      });
+      const data = await res.json();
+      const resultEl = document.getElementById("result");
+      resultEl.innerText = data.correct ? "✅ Верно" : "❌ Неверно";
+      resultEl.classList.toggle("ok", data.correct);
+      resultEl.classList.toggle("bad", !data.correct);
+    }
+
+    function renderChain(total, current) {
+      const chain = document.getElementById("chain");
+      chain.innerHTML = "";
+      for (let i = 1; i <= total; i += 1) {
+        const item = document.createElement("button");
+        item.type = "button";
+        item.className = "chain-item";
+        if (i < current) item.classList.add("done");
+        if (i === current) item.classList.add("active");
+        item.textContent = String(i);
+        item.addEventListener("click", () => jumpTo(i));
+        chain.appendChild(item);
+        if (i < total) {
+          const line = document.createElement("div");
+          line.className = "chain-line";
+          chain.appendChild(line);
+        }
+      }
+    }
+
+    function jumpTo(targetIndex) {
+      if (totalCount === null || remainingCount === null) return;
+      if (targetIndex < 1 || targetIndex > totalCount) return;
+      currentIndex = targetIndex;
+      remainingCount = totalCount - targetIndex + 1;
+    load();
+    }
+
+    function showPromo() {
+      promoShown = true;
+      sessionStorage.setItem("promoShown", "1");
+      document.getElementById("promoModal").classList.remove("hidden");
+    }
+
+    function closePromo() {
+      document.getElementById("promoModal").classList.add("hidden");
+    }
+
+
+    async function showAnswer() {
+      const res = await fetch("/api/answer", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ id: currentTask.id })
+      });
+      const data = await res.json();
+      setMathText(document.getElementById("answerText"), "Ответ: " + data.answer);
+      trackEvent("show_answer", { task_id: currentTask.id });
+      document.getElementById("answerText").classList.remove("hidden");
+    }
+
+    async function showSolution() {
+      if (!hasTriedAnswer) return;
+      const res = await fetch("/api/solution", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ id: currentTask.id })
+      });
+      const data = await res.json();
+      setMathText(document.getElementById("solutionText"), "Решение: " + data.solution);
+      trackEvent("show_solution", { task_id: currentTask.id });
+      document.getElementById("solutionText").classList.remove("hidden");
+    }
+
+    const menuButton = document.getElementById("menuButton");
+    const menuList = document.getElementById("menuList");
+    menuButton.addEventListener("click", () => {
+      menuList.classList.toggle("hidden");
+    });
+    document.addEventListener("click", (event) => {
+      if (!menuList.classList.contains("hidden") && !menuButton.contains(event.target) && !menuList.contains(event.target)) {
+        menuList.classList.add("hidden");
+      }
+    });
+
+    document.getElementById("promoClose").addEventListener("click", closePromo);
+    document.getElementById("promoModal").addEventListener("click", (event) => {
+      if (event.target.id === "promoModal") closePromo();
+    });
+
+    document.getElementById("shareLink").addEventListener("click", async (event) => {
+      event.preventDefault();
+      const url = window.location.href;
+      if (navigator.share) {
+        try {
+          await navigator.share({ title: "Качалка", url });
+          return;
+        } catch (error) {
+          // ignore
+        }
+      }
+      navigator.clipboard.writeText(url);
+      alert("Ссылка скопирована");
+    });
+
+    function recordAttempt() {
+      if (!currentTask || !currentTask.subject) return;
+      const key = "taskAttempts";
+      const payload = {
+        subject: currentTask.subject,
+        timestamp: Date.now()
+      };
+      const existing = JSON.parse(localStorage.getItem(key) || "[]");
+      existing.push(payload);
+      localStorage.setItem(key, JSON.stringify(existing));
+    }
+
+    function setMathText(element, text) {
+      element.textContent = text || "";
+      if (window.MathJax && window.MathJax.typesetPromise) {
+        window.MathJax.typesetPromise([element]);
+      }
+    }
+
+    function getAnonId() {
+      const key = "anon_id";
+      let value = localStorage.getItem(key);
+      if (!value) {
+        value = crypto.randomUUID();
+        localStorage.setItem(key, value);
+      }
+      return value;
+    }
+
+    function trackEvent(event, properties) {
+      fetch("/api/track", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          anon_id: anonId,
+          event,
+          properties: properties || {},
+          path: window.location.pathname
+        })
+      }).catch(() => {});
+    }
+    function showGift() {
+      giftShown = true;
+      sessionStorage.setItem("lastQuizUrl", window.location.href);
+      if (currentIndex !== null) {
+        sessionStorage.setItem("nextQuizIndex", String(currentIndex));
+      }
+      trackEvent("show_gift", { task_index: currentIndex });
+      const target = "/gift.html?from=" + encodeURIComponent(window.location.href);
+      window.location.href = target;
+    }
+
+    document.getElementById("answer").addEventListener("keydown", (event) => {
+      if (event.key === "Enter") check();
+    });
+
+    trackEvent("page_view");
+    load();
+  </script>
+</body>
+</html>

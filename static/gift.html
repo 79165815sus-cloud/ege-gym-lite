@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Подарок — Качалка</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f5f3ff;
+      --card: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --primary: #7c3aed;
+      --primary-hover: #6d28d9;
+      --accent: #4c1d95;
+      --border: #e5e7eb;
+      --shadow: 0 16px 32px rgba(15, 23, 42, 0.12);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, Arial, sans-serif;
+      background-color: var(--bg);
+      background-image:
+        linear-gradient(rgba(245, 243, 255, 0.92), rgba(245, 243, 255, 0.92)),
+        url("/bg.jpg");
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      color: var(--text);
+    }
+
+    .page {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 32px 16px;
+    }
+
+    .card {
+      width: 100%;
+      max-width: 520px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+      padding: 28px;
+      text-align: center;
+      position: relative;
+    }
+
+    h1 {
+      margin: 0 0 10px;
+      font-size: 22px;
+      color: var(--accent);
+    }
+
+    p {
+      margin: 0 0 16px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .gift-illustration {
+      width: 180px;
+      height: 180px;
+      margin: 0 auto 14px;
+      display: block;
+      filter: drop-shadow(0 12px 20px rgba(124, 58, 237, 0.25));
+    }
+
+    .btn {
+      padding: 10px 14px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: #fff;
+      cursor: pointer;
+      font-size: 14px;
+      width: 100%;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: #fff;
+    }
+    .btn-primary:hover { background: var(--primary-hover); }
+
+    .btn-secondary {
+      background: #fff;
+      border-color: #e9d5ff;
+      color: var(--accent);
+    }
+
+    .actions {
+      display: grid;
+      gap: 10px;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .menu {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      z-index: 20;
+    }
+
+    .menu-button {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      border: 1px solid #e9d5ff;
+      background: #fff;
+      cursor: pointer;
+      font-size: 20px;
+      line-height: 1;
+      color: var(--accent);
+    }
+
+    .menu-list {
+      position: absolute;
+      top: 44px;
+      right: 0;
+      min-width: 160px;
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      box-shadow: var(--shadow);
+      padding: 6px;
+      display: grid;
+      gap: 4px;
+    }
+
+    .menu-item {
+      padding: 8px 10px;
+      border-radius: 8px;
+      color: var(--accent);
+      text-decoration: none;
+      font-size: 14px;
+    }
+
+    .menu-item:hover {
+      background: #f5f3ff;
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="card">
+      <div class="menu">
+        <button id="menuButton" class="menu-button" type="button">⋯</button>
+        <div id="menuList" class="menu-list hidden">
+      <a class="menu-item" href="#" id="shareLink">Поделиться</a>
+      <a class="menu-item" href="mailto:support@100points.ru?subject=Сообщить%20об%20ошибке&body=Опишите%20проблему%20и%20укажите%20ссылку:" id="reportLink">Сообщить об ошибке</a>
+        </div>
+      </div>
+      <h1>Забери подарок</h1>
+      <img class="gift-illustration" src="/bg.jpg" alt="Подарок">
+      <p>Бесплатный урок по математике с Ильичом.</p>
+      <div class="actions">
+        <button class="btn btn-primary" onclick="window.location.href='https://lk.100points.ru/login'">Зарегистрироваться</button>
+        <button class="btn btn-secondary" id="continueButton">Продолжить</button>
+      </div>
+    </div>
+  </div>
+  <script>
+    const menuButton = document.getElementById("menuButton");
+    const menuList = document.getElementById("menuList");
+    menuButton.addEventListener("click", () => {
+      menuList.classList.toggle("hidden");
+    });
+    document.addEventListener("click", (event) => {
+      if (!menuList.classList.contains("hidden") && !menuButton.contains(event.target) && !menuList.contains(event.target)) {
+        menuList.classList.add("hidden");
+      }
+    });
+
+    document.getElementById("shareLink").addEventListener("click", async (event) => {
+      event.preventDefault();
+      const url = window.location.href;
+      if (navigator.share) {
+        try {
+          await navigator.share({ title: "Качалка", url });
+          return;
+        } catch (error) {
+          // ignore
+        }
+      }
+      navigator.clipboard.writeText(url);
+      alert("Ссылка скопирована");
+    });
+
+    document.getElementById("continueButton").addEventListener("click", () => {
+      const params = new URLSearchParams(window.location.search);
+      const from = params.get("from") || sessionStorage.getItem("lastQuizUrl");
+      if (!from) {
+        window.location.href = "/filters.html";
+        return;
+      }
+      try {
+        const url = new URL(from, window.location.origin);
+        const nextIndex = sessionStorage.getItem("nextQuizIndex");
+        if (nextIndex) {
+          url.searchParams.set("startIndex", nextIndex);
+        }
+        window.location.href = url.toString();
+      } catch (error) {
+        window.location.href = "/filters.html";
+      }
+    });
+  </script>
+</body>
+</html>
