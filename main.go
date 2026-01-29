@@ -633,6 +633,11 @@ func main() {
 	fs := http.FileServer(http.Dir("./static"))
 	http.Handle("/", fs)
 
-	log.Println("Server started at http://localhost:8080")
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	port := strings.TrimSpace(os.Getenv("PORT"))
+	if port == "" {
+		port = "8080"
+	}
+	addr := ":" + port
+	log.Printf("Server started on %s", addr)
+	log.Fatal(http.ListenAndServe(addr, nil))
 }
