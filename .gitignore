@@ -1,2 +1,27 @@
+
+# downloaded binaries / archives
+ngrok
+cloudflared
+*.zip
+*.tgz
+
+# Go binaries
+/bin/
+/build/
+*.exe
+*.out
+
+# Go test
+*.test
+coverage.out
+
+# Env files
+.env
+
+# IDE
+.idea/
+.vscode/
+
+# macOS
 .DS_Store
-analytics.jsonl
+
