@@ -392,7 +392,7 @@
             <p class="subtitle">«Вижу цель — не вижу препятствий» — Джейсон Стетхем</p>
           </div>
         </div>
-        <a class="filters-link" href="/filters.html">Начать заново</a>
+        <a class="filters-link" href="/filters.html" id="resetLink">Начать заново</a>
       </div>
 
       <p id="meta" class="meta"></p>
@@ -421,12 +421,14 @@
     </div>
   </div>
 
-  <div id="promoModal" class="modal-backdrop hidden">
+  <div id="resetModal" class="modal-backdrop hidden">
     <div class="modal">
-      <h2>Бонус за старт</h2>
-      <img class="modal-illustration" src="/bg.jpg" alt="Подарок">
-      <p>Сделай 5 заданий и забери подарок от 100‑балльного репетитора.</p>
-      <button class="btn btn-primary" id="promoClose" type="button">Погнали</button>
+      <h2 class="modal-title">Начать заново?</h2>
+      <p>Ваш прогресс не сохранится.</p>
+      <div class="row" style="justify-content: center; margin-bottom: 0;">
+        <button class="btn btn-ghost" id="resetCancel" type="button">Отмена</button>
+        <button class="btn btn-primary" id="resetConfirm" type="button">Да, начать</button>
+      </div>
     </div>
   </div>
 
@@ -444,7 +446,6 @@
     let totalCount = null;
     let currentIndex = null;
     let hasTriedAnswer = false;
-    let promoShown = false;
     let giftShown = false;
     let completedCount = 0;
     let hasLoadedOnce = false;
@@ -544,9 +545,6 @@
           "Задание " + currentIndex + " из " + totalCount +
           " · Осталось: " + remainingAfter;
         renderChain(totalCount, currentIndex);
-        if (currentIndex === 1 && !promoShown && !sessionStorage.getItem("promoShown")) {
-          showPromo();
-        }
       } else {
         document.getElementById("planInfo").innerText = "";
         document.getElementById("chain").innerHTML = "";
@@ -575,9 +573,16 @@
     }
 
     async function check() {
+      const answer = document.getElementById("answer").value.trim();
+      const resultEl = document.getElementById("result");
+      if (!answer) {
+        resultEl.innerText = "Введите ответ перед проверкой.";
+        resultEl.classList.remove("ok");
+        resultEl.classList.add("bad");
+        return;
+      }
       hasTriedAnswer = true;
       document.getElementById("solutionButton").classList.remove("hidden");
-      const answer = document.getElementById("answer").value.trim();
       recordAttempt();
       trackEvent("check_answer", { task_id: currentTask.id });
       const res = await fetch("/api/check", {
@@ -586,7 +591,6 @@
         body: JSON.stringify({ id: currentTask.id, answer })
       });
       const data = await res.json();
-      const resultEl = document.getElementById("result");
       resultEl.innerText = data.correct ? "✅ Верно" : "❌ Неверно";
       resultEl.classList.toggle("ok", data.correct);
       resultEl.classList.toggle("bad", !data.correct);
@@ -620,15 +624,6 @@
     load();
     }
 
-    function showPromo() {
-      promoShown = true;
-      sessionStorage.setItem("promoShown", "1");
-      document.getElementById("promoModal").classList.remove("hidden");
-    }
-
-    function closePromo() {
-      document.getElementById("promoModal").classList.add("hidden");
-    }
 
 
     async function showAnswer() {
@@ -665,11 +660,6 @@
       if (!menuList.classList.contains("hidden") && !menuButton.contains(event.target) && !menuList.contains(event.target)) {
         menuList.classList.add("hidden");
       }
-    });
-
-    document.getElementById("promoClose").addEventListener("click", closePromo);
-    document.getElementById("promoModal").addEventListener("click", (event) => {
-      if (event.target.id === "promoModal") closePromo();
     });
 
     document.getElementById("shareLink").addEventListener("click", async (event) => {
@@ -742,6 +732,32 @@
     document.getElementById("answer").addEventListener("keydown", (event) => {
       if (event.key === "Enter") check();
     });
+
+    const resetLink = document.getElementById("resetLink");
+    const resetModal = document.getElementById("resetModal");
+    const resetCancel = document.getElementById("resetCancel");
+    const resetConfirm = document.getElementById("resetConfirm");
+    if (resetLink && resetModal) {
+      resetLink.addEventListener("click", (event) => {
+        event.preventDefault();
+        resetModal.classList.remove("hidden");
+      });
+    }
+    if (resetCancel && resetModal) {
+      resetCancel.addEventListener("click", () => {
+        resetModal.classList.add("hidden");
+      });
+    }
+    if (resetConfirm) {
+      resetConfirm.addEventListener("click", () => {
+        window.location.href = "/filters.html";
+      });
+    }
+    if (resetModal) {
+      resetModal.addEventListener("click", (event) => {
+        if (event.target.id === "resetModal") resetModal.classList.add("hidden");
+      });
+    }
 
     trackEvent("page_view");
     load();
