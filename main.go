@@ -23,8 +23,10 @@ type Task struct {
 	ID             int    `json:"id"`
 	Question       string `json:"question"`
 	ImageURL       string `json:"imageUrl"`
+	SolutionImage  string `json:"solutionImageUrl"`
 	Subject        string `json:"subject"`
 	ExamTaskNumber int    `json:"examTaskNumber"`
+	Variant        int    `json:"variant"`
 	Subtopic       string `json:"subtopic"`
 	ExamType       string `json:"examType"`
 	Answer         Answer `json:"answer"`
@@ -37,6 +39,7 @@ type TaskPublic struct {
 	ImageURL       string `json:"imageUrl"`
 	Subject        string `json:"subject"`
 	ExamTaskNumber int    `json:"examTaskNumber"`
+	Variant        int    `json:"variant"`
 	Subtopic       string `json:"subtopic"`
 	ExamType       string `json:"examType"`
 }
@@ -112,18 +115,22 @@ func toPublic(task Task) TaskPublic {
 		ImageURL:       task.ImageURL,
 		Subject:        task.Subject,
 		ExamTaskNumber: task.ExamTaskNumber,
+		Variant:        task.Variant,
 		Subtopic:       task.Subtopic,
 		ExamType:       task.ExamType,
 	}
 }
 
-func filterTasks(items []Task, examType, subject, subtopic string, examTaskNumber *int) []Task {
+func filterTasks(items []Task, examType, subject, subtopic string, examTaskNumber, variant *int) []Task {
 	filtered := make([]Task, 0, len(items))
 	for _, task := range items {
 		if examType != "" && !strings.EqualFold(task.ExamType, examType) {
 			continue
 		}
 		if subject != "" && !strings.EqualFold(task.Subject, subject) {
+			continue
+		}
+		if variant != nil && task.Variant != *variant {
 			continue
 		}
 		if subtopic != "" && !strings.EqualFold(task.Subtopic, subtopic) {
@@ -292,7 +299,17 @@ func main() {
 			examTaskNumber = &parsed
 		}
 
-		available := filterTasks(tasks, examType, subject, subtopic, examTaskNumber)
+		var variant *int
+		if rawVariant := strings.TrimSpace(query.Get("variant")); rawVariant != "" {
+			parsed, err := strconv.Atoi(rawVariant)
+			if err != nil {
+				http.Error(w, "bad variant", http.StatusBadRequest)
+				return
+			}
+			variant = &parsed
+		}
+
+		available := filterTasks(tasks, examType, subject, subtopic, examTaskNumber, variant)
 		if len(available) == 0 {
 			http.Error(w, "no tasks for filters", http.StatusNotFound)
 			return
@@ -383,7 +400,8 @@ func main() {
 		}
 
 		json.NewEncoder(w).Encode(map[string]string{
-			"solution": task.Solution,
+			"solution":          task.Solution,
+			"solutionImageUrl": task.SolutionImage,
 		})
 	})
 
@@ -421,8 +439,18 @@ func main() {
 			examTaskNumber = &parsed
 		}
 
+		var variant *int
+		if rawVariant := strings.TrimSpace(query.Get("variant")); rawVariant != "" {
+			parsed, err := strconv.Atoi(rawVariant)
+			if err != nil {
+				http.Error(w, "bad variant", http.StatusBadRequest)
+				return
+			}
+			variant = &parsed
+		}
+
 		tasksMu.Lock()
-		available := filterTasks(tasks, examType, subject, subtopic, examTaskNumber)
+		available := filterTasks(tasks, examType, subject, subtopic, examTaskNumber, variant)
 		tasksMu.Unlock()
 
 		sort.Slice(available, func(i, j int) bool {

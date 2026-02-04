@@ -40,7 +40,7 @@
 
     .card {
       width: 100%;
-      max-width: 1100px;
+      max-width: 1280px;
       margin: 0 auto;
       background: var(--card);
       border: 1px solid var(--border);
@@ -222,8 +222,10 @@
               <th>ID</th>
               <th>Вопрос</th>
               <th>Картинка</th>
+              <th>Картинка решения</th>
               <th>Предмет</th>
               <th>№ в экзамене</th>
+              <th>Вариант</th>
               <th>Подтема</th>
               <th>ЕГЭ/ОГЭ</th>
               <th>Ответ</th>
@@ -234,8 +236,10 @@
               <th><input id="filterId" placeholder="Фильтр"></th>
               <th><input id="filterQuestion" placeholder="Фильтр"></th>
               <th><input id="filterImage" placeholder="Фильтр"></th>
+              <th><input id="filterSolutionImage" placeholder="Фильтр"></th>
               <th><input id="filterSubject" placeholder="Фильтр"></th>
               <th><input id="filterExamNumber" placeholder="Фильтр"></th>
+              <th><input id="filterVariant" placeholder="Фильтр"></th>
               <th><input id="filterSubtopic" placeholder="Фильтр"></th>
               <th><input id="filterExamType" placeholder="Фильтр"></th>
               <th><input id="filterAnswer" placeholder="Фильтр"></th>
@@ -301,8 +305,15 @@
           <td>
             <div class="upload-wrap">
               <input data-field="imageUrl" data-id="${task.id}" value="${task.imageUrl ?? ""}">
-              <button class="btn" type="button" onclick="triggerUpload(${task.id})">Загрузить</button>
-              <input class="upload-input" data-upload="${task.id}" type="file" accept="image/*">
+              <button class="btn" type="button" onclick="triggerUpload(${task.id}, 'imageUrl')">Загрузить</button>
+              <input class="upload-input" data-upload-id="${task.id}" data-upload-field="imageUrl" type="file" accept="image/*">
+            </div>
+          </td>
+          <td>
+            <div class="upload-wrap">
+              <input data-field="solutionImageUrl" data-id="${task.id}" value="${task.solutionImageUrl ?? ""}">
+              <button class="btn" type="button" onclick="triggerUpload(${task.id}, 'solutionImageUrl')">Загрузить</button>
+              <input class="upload-input" data-upload-id="${task.id}" data-upload-field="solutionImageUrl" type="file" accept="image/*">
             </div>
           </td>
           <td>
@@ -311,6 +322,7 @@
             </select>
           </td>
           <td><input data-field="examTaskNumber" data-id="${task.id}" type="number" value="${task.examTaskNumber ?? ""}"></td>
+          <td><input data-field="variant" data-id="${task.id}" type="number" value="${task.variant ?? ""}"></td>
           <td><input data-field="subtopic" data-id="${task.id}" value="${task.subtopic ?? ""}"></td>
           <td><input data-field="examType" data-id="${task.id}" value="${task.examType ?? ""}"></td>
           <td><input data-field="answer" data-id="${task.id}" value="${task.answer ?? ""}"></td>
@@ -320,7 +332,7 @@
         body.appendChild(row);
       });
 
-      document.querySelectorAll("[data-upload]").forEach((input) => {
+      document.querySelectorAll("[data-upload-id]").forEach((input) => {
         input.addEventListener("change", handleUpload);
       });
       document.querySelectorAll("textarea[data-field]").forEach((textarea) => {
@@ -333,8 +345,10 @@
         id: document.getElementById("filterId").value.trim().toLowerCase(),
         question: document.getElementById("filterQuestion").value.trim().toLowerCase(),
         imageUrl: document.getElementById("filterImage").value.trim().toLowerCase(),
+        solutionImageUrl: document.getElementById("filterSolutionImage").value.trim().toLowerCase(),
         subject: document.getElementById("filterSubject").value.trim().toLowerCase(),
         examTaskNumber: document.getElementById("filterExamNumber").value.trim().toLowerCase(),
+        variant: document.getElementById("filterVariant").value.trim().toLowerCase(),
         subtopic: document.getElementById("filterSubtopic").value.trim().toLowerCase(),
         examType: document.getElementById("filterExamType").value.trim().toLowerCase(),
         answer: document.getElementById("filterAnswer").value.trim().toLowerCase(),
@@ -345,8 +359,10 @@
         if (filters.id && !String(task.id ?? "").toLowerCase().includes(filters.id)) return false;
         if (filters.question && !String(task.question ?? "").toLowerCase().includes(filters.question)) return false;
         if (filters.imageUrl && !String(task.imageUrl ?? "").toLowerCase().includes(filters.imageUrl)) return false;
+        if (filters.solutionImageUrl && !String(task.solutionImageUrl ?? "").toLowerCase().includes(filters.solutionImageUrl)) return false;
         if (filters.subject && !String(task.subject ?? "").toLowerCase().includes(filters.subject)) return false;
         if (filters.examTaskNumber && !String(task.examTaskNumber ?? "").toLowerCase().includes(filters.examTaskNumber)) return false;
+        if (filters.variant && !String(task.variant ?? "").toLowerCase().includes(filters.variant)) return false;
         if (filters.subtopic && !String(task.subtopic ?? "").toLowerCase().includes(filters.subtopic)) return false;
         if (filters.examType && !String(task.examType ?? "").toLowerCase().includes(filters.examType)) return false;
         if (filters.answer && !String(task.answer ?? "").toLowerCase().includes(filters.answer)) return false;
@@ -405,8 +421,10 @@
           id: Number(get("id").value),
           question: get("question").value.trim(),
           imageUrl: get("imageUrl").value.trim(),
+          solutionImageUrl: get("solutionImageUrl").value.trim(),
           subject: get("subject").value.trim(),
           examTaskNumber: Number(get("examTaskNumber").value),
+          variant: Number(get("variant").value),
           subtopic: get("subtopic").value.trim(),
           examType: get("examType").value.trim(),
           answer: get("answer").value.trim(),
@@ -437,8 +455,10 @@
         id: maxId + 1,
         question: "",
         imageUrl: "",
+        solutionImageUrl: "",
         subject: "",
         examTaskNumber: 1,
+        variant: 0,
         subtopic: "",
         examType: "ЕГЭ",
         answer: 0,
@@ -454,14 +474,15 @@
       renderTable();
     }
 
-    function triggerUpload(taskId) {
-      const input = document.querySelector(`[data-upload="${taskId}"]`);
+    function triggerUpload(taskId, fieldName) {
+      const input = document.querySelector(`[data-upload-id="${taskId}"][data-upload-field="${fieldName}"]`);
       if (input) input.click();
     }
 
     async function handleUpload(event) {
       const file = event.target.files[0];
-      const taskId = Number(event.target.getAttribute("data-upload"));
+      const taskId = Number(event.target.getAttribute("data-upload-id"));
+      const fieldName = event.target.getAttribute("data-upload-field") || "imageUrl";
       if (!file || !taskId) return;
       setStatus("Загрузка картинки...");
       const formData = new FormData();
@@ -476,7 +497,7 @@
           return;
         }
         const data = await res.json();
-        const field = document.querySelector(`[data-field="imageUrl"][data-id="${taskId}"]`);
+        const field = document.querySelector(`[data-field="${fieldName}"][data-id="${taskId}"]`);
         if (field && data.url) {
           field.value = data.url;
           setStatus("Картинка загружена. Нажмите «Сохранить»");
@@ -486,8 +507,29 @@
       }
     }
 
-    function isValidTasks(data) {
-      return Array.isArray(data) && data.every((item) => typeof item === "object" && item !== null);
+    function normalizeImportedPayload(payload) {
+      if (Array.isArray(payload)) return payload;
+      if (payload && Array.isArray(payload.tasks)) return payload.tasks;
+      return null;
+    }
+
+    function buildTaskFromImport(item, index, defaults) {
+      const rawExamTask = item.examTaskNumber ?? item.number ?? "";
+      const rawVariant = item.variant ?? item.variantNumber ?? "";
+      const rawAnswer = item.answer;
+      return {
+        id: Number(item.id ?? item.number ?? index + 1) || 0,
+        question: String(item.question ?? "").trim(),
+        imageUrl: String(item.imageUrl ?? "").trim(),
+        solutionImageUrl: String(item.solutionImageUrl ?? "").trim(),
+        subject: String(item.subject ?? defaults.subject ?? "").trim(),
+        examTaskNumber: Number(rawExamTask) || 0,
+        variant: Number(rawVariant || defaults.variant || "") || 0,
+        subtopic: String(item.subtopic ?? defaults.subtopic ?? "").trim(),
+        examType: String(item.examType ?? defaults.examType ?? "").trim(),
+        answer: rawAnswer == null ? "" : String(rawAnswer).trim(),
+        solution: String(item.solution ?? "").trim()
+      };
     }
 
     document.getElementById("importFile").addEventListener("change", (event) => {
@@ -497,13 +539,19 @@
       reader.onload = () => {
         try {
           const parsed = JSON.parse(String(reader.result));
-          if (!isValidTasks(parsed)) {
+          const rawTasks = normalizeImportedPayload(parsed);
+          if (!rawTasks || !rawTasks.every((item) => typeof item === "object" && item !== null)) {
             setStatus("Неверный формат файла");
             return;
           }
-          tasks = parsed;
+          const mapped = rawTasks.map((item, index) => buildTaskFromImport(item, index, {}));
+          const maxId = tasks.reduce((max, task) => Math.max(max, Number(task.id) || 0), 0);
+          mapped.forEach((item, idx) => {
+            item.id = maxId + idx + 1;
+          });
+          tasks = tasks.concat(mapped);
           renderTable();
-          setStatus("Импортировано. Нажмите «Сохранить»");
+          setStatus("Добавлено. Нажмите «Сохранить»");
         } catch (error) {
           setStatus("Ошибка чтения JSON");
         } finally {

@@ -1,0 +1,128 @@
+[
+  {
+    "task": "5",
+    "filename": "task_5_01.png",
+    "page": 4,
+    "xref": 14
+  },
+  {
+    "task": "7",
+    "filename": "task_7_01.png",
+    "page": 6,
+    "xref": 21
+  },
+  {
+    "task": "unknown",
+    "filename": "task_unknown_01.png",
+    "page": 8,
+    "xref": 26
+  },
+  {
+    "task": "9",
+    "filename": "task_9_01.png",
+    "page": 8,
+    "xref": 27
+  },
+  {
+    "task": "10",
+    "filename": "task_10_01.png",
+    "page": 9,
+    "xref": 31
+  },
+  {
+    "task": "14",
+    "filename": "task_14_01.png",
+    "page": 12,
+    "xref": 39
+  },
+  {
+    "task": "unknown",
+    "filename": "task_unknown_02.png",
+    "page": 13,
+    "xref": 42
+  },
+  {
+    "task": "15",
+    "filename": "task_15_01.png",
+    "page": 13,
+    "xref": 44
+  },
+  {
+    "task": "unknown",
+    "filename": "task_unknown_03.png",
+    "page": 14,
+    "xref": 47
+  },
+  {
+    "task": "16",
+    "filename": "task_16_01.png",
+    "page": 14,
+    "xref": 49
+  },
+  {
+    "task": "unknown",
+    "filename": "task_unknown_04.png",
+    "page": 15,
+    "xref": 53
+  },
+  {
+    "task": "17",
+    "filename": "task_17_01.png",
+    "page": 15,
+    "xref": 55
+  },
+  {
+    "task": "19",
+    "filename": "task_19_01.png",
+    "page": 17,
+    "xref": 60
+  },
+  {
+    "task": "20",
+    "filename": "task_20_01.png",
+    "page": 17,
+    "xref": 61
+  },
+  {
+    "task": "unknown",
+    "filename": "task_unknown_05.png",
+    "page": 18,
+    "xref": 64
+  },
+  {
+    "task": "unknown",
+    "filename": "task_unknown_06.png",
+    "page": 20,
+    "xref": 69
+  },
+  {
+    "task": "24",
+    "filename": "task_24_01.png",
+    "page": 22,
+    "xref": 74
+  },
+  {
+    "task": "unknown",
+    "filename": "task_unknown_07.png",
+    "page": 23,
+    "xref": 77
+  },
+  {
+    "task": "unknown",
+    "filename": "task_unknown_08.png",
+    "page": 27,
+    "xref": 86
+  },
+  {
+    "task": "unknown",
+    "filename": "task_unknown_09.png",
+    "page": 28,
+    "xref": 90
+  },
+  {
+    "task": "unknown",
+    "filename": "task_unknown_10.png",
+    "page": 28,
+    "xref": 92
+  }
+]

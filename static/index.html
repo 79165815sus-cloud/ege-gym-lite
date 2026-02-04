@@ -190,6 +190,70 @@
       background: #fff;
     }
 
+    .solution-image {
+      width: min(100%, 560px);
+      max-height: 260px;
+      object-fit: contain;
+      border-radius: 12px;
+      border: 1px solid #e9d5ff;
+      margin: 12px auto 0;
+      background: #fff;
+      display: block;
+    }
+
+    .score-box {
+      margin-top: 12px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px dashed #c4b5fd;
+      background: #faf7ff;
+      color: var(--accent);
+      font-size: 13px;
+    }
+
+    .score-row {
+      margin-top: 8px;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .score-row input[type="number"] {
+      max-width: 120px;
+    }
+
+    .score-saved {
+      margin-top: 6px;
+      color: var(--muted);
+    }
+
+    .summary-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      font-size: 13px;
+    }
+
+    .summary-table th,
+    .summary-table td {
+      border: 1px solid var(--border);
+      padding: 6px 8px;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    .summary-table th {
+      background: #fafafa;
+      font-weight: 600;
+      color: var(--accent);
+    }
+
+    .summary-table td:last-child {
+      text-align: right;
+      white-space: nowrap;
+    }
+
     .row {
       display: flex;
       gap: 10px;
@@ -403,11 +467,11 @@
       <div class="row">
         <input id="answer" type="number" placeholder="Введите ответ"/>
         <button class="btn btn-primary" onclick="check()">Проверить</button>
-        <button class="btn btn-ghost" onclick="load()">Следующая</button>
+        <button class="btn btn-ghost" onclick="nextTask()">Следующая</button>
       </div>
 
       <div class="row">
-        <button class="btn btn-soft" onclick="showAnswer()">Ответ</button>
+        <button class="btn btn-soft" id="answerButton" onclick="showAnswer()">Ответ</button>
         <button class="btn btn-soft hidden" id="solutionButton" onclick="showSolution()">Решение</button>
       </div>
 
@@ -416,8 +480,41 @@
       <div class="divider"></div>
 
       <p id="result" class="result"></p>
+      <p id="manualCheckNotice" class="hint hidden"></p>
       <p id="answerText" class="hint hidden"></p>
       <p id="solutionText" class="hint hidden"></p>
+      <img id="solutionImage" class="solution-image hidden" alt="Иллюстрация к решению">
+      <div id="manualScoreBox" class="score-box hidden">
+        <div>
+          Поставь себе балл за задание (0–<span id="manualScoreMax"></span>).
+        </div>
+        <div class="score-row">
+          <input id="manualScoreInput" type="number" min="0" step="1" placeholder="Балл">
+          <button class="btn btn-soft" id="manualScoreSave" type="button">Сохранить</button>
+        </div>
+        <div id="manualScoreSaved" class="score-saved hidden"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="summaryModal" class="modal-backdrop hidden">
+    <div class="modal">
+      <h2 class="modal-title">Итоги тренировки</h2>
+      <p>Набрано баллов: <strong id="summaryTotal">0</strong></p>
+      <p class="subtitle">Можно начать заново или закрыть окно.</p>
+      <table class="summary-table">
+        <thead>
+          <tr>
+            <th>Задание</th>
+            <th>Балл</th>
+          </tr>
+        </thead>
+        <tbody id="summaryBreakdown"></tbody>
+      </table>
+      <div class="row" style="justify-content: center; margin: 18px 0 0;">
+        <button class="btn btn-ghost" id="summaryClose" type="button">Закрыть</button>
+        <button class="btn btn-primary" id="summaryRestart" type="button">Начать заново</button>
+      </div>
     </div>
   </div>
 
@@ -446,10 +543,13 @@
     let totalCount = null;
     let currentIndex = null;
     let hasTriedAnswer = false;
+    let manualCheck = false;
+    let manualScoreMax = null;
     let giftShown = false;
     let completedCount = 0;
     let hasLoadedOnce = false;
     let sequenceTasks = null;
+    let advanceNext = false;
     const anonId = getAnonId();
 
     async function load() {
@@ -462,25 +562,28 @@
         totalCount = Number.isFinite(parsed) && parsed > 0 ? parsed : null;
         remainingCount = totalCount;
       }
-      if (totalCount && startIndexParam && currentIndex === null) {
+      function applyStartIndexIfNeeded() {
+        if (!startIndexParam || currentIndex !== null || !totalCount) return;
         const startIndex = Number(startIndexParam);
         if (Number.isFinite(startIndex) && startIndex >= 1 && startIndex <= totalCount) {
           currentIndex = startIndex;
           remainingCount = totalCount - startIndex + 1;
         }
       }
+      applyStartIndexIfNeeded();
 
       if (hasLoadedOnce) {
         completedCount += 1;
       }
       hasLoadedOnce = true;
-      if (!giftShown && completedCount >= 5) {
-        showGift();
-      }
 
       if (remainingCount !== null && remainingCount <= 0) {
-        if (!giftShown) showGift();
+        showSummary();
         return;
+      }
+
+      if (!giftShown && completedCount === 5) {
+        showGift();
       }
 
       if (sequence) {
@@ -501,9 +604,20 @@
             totalCount = sequenceTasks.length;
             remainingCount = totalCount;
           }
+          applyStartIndexIfNeeded();
+          saveTrainingList(sequenceTasks);
+        }
+        if (advanceNext && currentIndex !== null) {
+          if (totalCount && currentIndex >= totalCount) {
+            showSummary();
+            advanceNext = false;
+            return;
+          }
+          currentIndex += 1;
         }
         const index = currentIndex ? currentIndex - 1 : 0;
         currentTask = sequenceTasks[index];
+        advanceNext = false;
       } else {
       const url = params.toString() ? "/api/task?" + params.toString() : "/api/task";
         const res = await fetch(url);
@@ -549,7 +663,7 @@
         document.getElementById("planInfo").innerText = "";
         document.getElementById("chain").innerHTML = "";
       }
-      setMathText(document.getElementById("question"), currentTask.question);
+      setMathText(document.getElementById("question"), currentTask.question, { normalize: true });
       const questionImage = document.getElementById("questionImage");
       if (currentTask.imageUrl) {
         questionImage.src = currentTask.imageUrl;
@@ -561,20 +675,60 @@
       document.getElementById("result").innerText = "";
       setMathText(document.getElementById("answerText"), "");
       setMathText(document.getElementById("solutionText"), "");
+      const manualNotice = document.getElementById("manualCheckNotice");
+      manualNotice.classList.add("hidden");
+      manualNotice.innerText = "";
       document.getElementById("answerText").classList.add("hidden");
       document.getElementById("solutionText").classList.add("hidden");
+      const solutionImage = document.getElementById("solutionImage");
+      solutionImage.classList.add("hidden");
+      solutionImage.removeAttribute("src");
+      const scoreBox = document.getElementById("manualScoreBox");
+      scoreBox.classList.add("hidden");
+      document.getElementById("manualScoreSaved").classList.add("hidden");
+      document.getElementById("manualScoreInput").value = "";
       document.getElementById("answer").value = "";
       hasTriedAnswer = false;
       document.getElementById("solutionButton").classList.add("hidden");
+      document.getElementById("answerButton").classList.remove("hidden");
+      const examNum = Number(currentTask.examTaskNumber);
+      const isMathManual = currentTask.subject === "Математика профиль" && examNum >= 13 && examNum <= 19;
+      const isChemManual = currentTask.subject === "Химия" && examNum >= 29;
+      manualCheck = isMathManual || isChemManual;
+      manualScoreMax = null;
+      if (manualCheck) {
+        let scoreByTask = { 13: 2, 14: 2, 15: 2, 16: 2, 17: 2, 18: 2, 19: 3 };
+        if (isChemManual) {
+          scoreByTask = { 29: 2, 30: 2, 31: 4, 32: 5, 33: 3, 34: 4 };
+        }
+        manualScoreMax = scoreByTask[examNum] || 2;
+        document.getElementById("manualScoreMax").innerText = String(manualScoreMax);
+        const scoreInput = document.getElementById("manualScoreInput");
+        scoreInput.max = String(manualScoreMax);
+      }
+      if (manualCheck) {
+        manualNotice.innerText =
+          "Автоматической проверки нет. Можешь написать ответ, посмотреть решение и самостоятельно проставить себе балл.";
+        manualNotice.classList.remove("hidden");
+        document.getElementById("solutionButton").classList.remove("hidden");
+        document.getElementById("answerButton").classList.add("hidden");
+      }
 
       if (remainingCount !== null) {
         remainingCount -= 1;
       }
+      saveTrainingMeta(currentTask);
     }
 
     async function check() {
       const answer = document.getElementById("answer").value.trim();
       const resultEl = document.getElementById("result");
+      if (manualCheck) {
+        resultEl.innerText = "Автоматической проверки нет для этого задания.";
+        resultEl.classList.remove("ok");
+        resultEl.classList.add("bad");
+        return;
+      }
       if (!answer) {
         resultEl.innerText = "Введите ответ перед проверкой.";
         resultEl.classList.remove("ok");
@@ -594,6 +748,7 @@
       resultEl.innerText = data.correct ? "✅ Верно" : "❌ Неверно";
       resultEl.classList.toggle("ok", data.correct);
       resultEl.classList.toggle("bad", !data.correct);
+      saveTrainingScore(currentTask.id, data.correct ? 1 : 0);
     }
 
     function renderChain(total, current) {
@@ -621,12 +776,20 @@
       if (targetIndex < 1 || targetIndex > totalCount) return;
       currentIndex = targetIndex;
       remainingCount = totalCount - targetIndex + 1;
-    load();
+      load();
+    }
+
+    function nextTask() {
+      advanceNext = true;
+      load();
     }
 
 
 
     async function showAnswer() {
+      if (manualCheck) {
+        return;
+      }
       const res = await fetch("/api/answer", {
         method: "POST",
         headers: {"Content-Type": "application/json"},
@@ -639,7 +802,7 @@
     }
 
     async function showSolution() {
-      if (!hasTriedAnswer) return;
+      if (!hasTriedAnswer && !manualCheck) return;
       const res = await fetch("/api/solution", {
         method: "POST",
         headers: {"Content-Type": "application/json"},
@@ -649,6 +812,25 @@
       setMathText(document.getElementById("solutionText"), "Решение: " + data.solution);
       trackEvent("show_solution", { task_id: currentTask.id });
       document.getElementById("solutionText").classList.remove("hidden");
+      const solutionImage = document.getElementById("solutionImage");
+      if (data.solutionImageUrl) {
+        solutionImage.src = data.solutionImageUrl;
+        solutionImage.classList.remove("hidden");
+      } else {
+        solutionImage.classList.add("hidden");
+        solutionImage.removeAttribute("src");
+      }
+      if (manualCheck && manualScoreMax) {
+        const scoreBox = document.getElementById("manualScoreBox");
+        scoreBox.classList.remove("hidden");
+        const saved = sessionStorage.getItem(`manualScore:${currentTask.id}`);
+        if (saved != null) {
+          document.getElementById("manualScoreInput").value = saved;
+          const savedEl = document.getElementById("manualScoreSaved");
+          savedEl.innerText = `Балл сохранён: ${saved} из ${manualScoreMax}.`;
+          savedEl.classList.remove("hidden");
+        }
+      }
     }
 
     const menuButton = document.getElementById("menuButton");
@@ -689,8 +871,18 @@
       localStorage.setItem(key, JSON.stringify(existing));
     }
 
-    function setMathText(element, text) {
-      element.textContent = text || "";
+    function normalizeQuestionText(text) {
+      return String(text || "")
+        .replace(/\s+/g, " ")
+        .trim();
+    }
+
+    function setMathText(element, text, options) {
+      let value = text || "";
+      if (options && options.normalize) {
+        value = normalizeQuestionText(value);
+      }
+      element.textContent = value;
       if (window.MathJax && window.MathJax.typesetPromise) {
         window.MathJax.typesetPromise([element]);
       }
@@ -722,7 +914,7 @@
       giftShown = true;
       sessionStorage.setItem("lastQuizUrl", window.location.href);
       if (currentIndex !== null) {
-        sessionStorage.setItem("nextQuizIndex", String(currentIndex));
+        sessionStorage.setItem("nextQuizIndex", String(currentIndex + 1));
       }
       trackEvent("show_gift", { task_index: currentIndex });
       const target = "/gift.html?from=" + encodeURIComponent(window.location.href);
@@ -750,6 +942,7 @@
     }
     if (resetConfirm) {
       resetConfirm.addEventListener("click", () => {
+        clearTrainingStorage();
         window.location.href = "/filters.html";
       });
     }
@@ -761,6 +954,136 @@
 
     trackEvent("page_view");
     load();
+
+    const manualScoreSave = document.getElementById("manualScoreSave");
+    if (manualScoreSave) {
+      manualScoreSave.addEventListener("click", () => {
+        if (!manualCheck || !manualScoreMax) return;
+        const input = document.getElementById("manualScoreInput");
+        const raw = input.value.trim();
+        const value = Number(raw);
+        const savedEl = document.getElementById("manualScoreSaved");
+        if (!Number.isFinite(value) || value < 0 || value > manualScoreMax) {
+          savedEl.innerText = `Введите балл от 0 до ${manualScoreMax}.`;
+          savedEl.classList.remove("hidden");
+          return;
+        }
+        sessionStorage.setItem(`manualScore:${currentTask.id}`, String(value));
+        saveTrainingScore(currentTask.id, value);
+        savedEl.innerText = `Балл сохранён: ${value} из ${manualScoreMax}.`;
+        savedEl.classList.remove("hidden");
+      });
+    }
+
+    function getTrainingScores() {
+      try {
+        return JSON.parse(sessionStorage.getItem("trainingScores") || "{}");
+      } catch (error) {
+        return {};
+      }
+    }
+
+    function saveTrainingScore(taskId, score) {
+      const scores = getTrainingScores();
+      scores[String(taskId)] = score;
+      sessionStorage.setItem("trainingScores", JSON.stringify(scores));
+    }
+
+    function getTrainingMeta() {
+      try {
+        return JSON.parse(sessionStorage.getItem("trainingMeta") || "{}");
+      } catch (error) {
+        return {};
+      }
+    }
+
+    function saveTrainingMeta(task) {
+      if (!task || !task.id) return;
+      const meta = getTrainingMeta();
+      meta[String(task.id)] = {
+        subject: task.subject || "",
+        examTaskNumber: task.examTaskNumber || "",
+      };
+      sessionStorage.setItem("trainingMeta", JSON.stringify(meta));
+    }
+
+    function saveTrainingList(tasks) {
+      if (!Array.isArray(tasks)) return;
+      const ids = tasks.map((task) => String(task.id));
+      sessionStorage.setItem("trainingList", JSON.stringify(ids));
+      const meta = getTrainingMeta();
+      tasks.forEach((task) => {
+        if (!task || !task.id) return;
+        meta[String(task.id)] = {
+          subject: task.subject || "",
+          examTaskNumber: task.examTaskNumber || "",
+        };
+      });
+      sessionStorage.setItem("trainingMeta", JSON.stringify(meta));
+    }
+
+    function getTrainingList() {
+      try {
+        return JSON.parse(sessionStorage.getItem("trainingList") || "[]");
+      } catch (error) {
+        return [];
+      }
+    }
+
+    function clearTrainingStorage() {
+      sessionStorage.removeItem("trainingScores");
+      sessionStorage.removeItem("trainingMeta");
+      sessionStorage.removeItem("trainingList");
+      Object.keys(sessionStorage).forEach((key) => {
+        if (key.startsWith("manualScore:")) sessionStorage.removeItem(key);
+      });
+    }
+
+    function showSummary() {
+      const scores = getTrainingScores();
+      const meta = getTrainingMeta();
+      const trainingList = getTrainingList();
+      const summaryIds = trainingList.length ? trainingList : Object.keys(meta);
+      const total = summaryIds.reduce((sum, taskId) => {
+        const value = scores[taskId] ?? 0;
+        const num = Number(value);
+        return Number.isFinite(num) ? sum + num : sum;
+      }, 0);
+      document.getElementById("summaryTotal").innerText = String(total);
+      const breakdown = document.getElementById("summaryBreakdown");
+      const rows = summaryIds
+        .map((taskId) => {
+          const info = meta[taskId] || {};
+          const subject = info.subject || "";
+          const examNum = Number(info.examTaskNumber) || 0;
+          const score = scores[taskId] ?? 0;
+          const label = `${subject ? subject + " " : ""}${examNum ? "№" + examNum : "id " + taskId}`;
+          return { label, score, subject, examNum, taskId: Number(taskId) || 0 };
+        })
+        .sort((a, b) => {
+          if (a.subject !== b.subject) return a.subject.localeCompare(b.subject, "ru");
+          if (a.examNum !== b.examNum) return a.examNum - b.examNum;
+          return a.taskId - b.taskId;
+        });
+      breakdown.innerHTML = rows.length
+        ? rows.map((row) => `<tr><td>${row.label}</td><td>${row.score}</td></tr>`).join("")
+        : `<tr><td colspan="2">Нет данных по заданиям.</td></tr>`;
+      document.getElementById("summaryModal").classList.remove("hidden");
+    }
+
+    const summaryClose = document.getElementById("summaryClose");
+    if (summaryClose) {
+      summaryClose.addEventListener("click", () => {
+        document.getElementById("summaryModal").classList.add("hidden");
+      });
+    }
+    const summaryRestart = document.getElementById("summaryRestart");
+    if (summaryRestart) {
+      summaryRestart.addEventListener("click", () => {
+        clearTrainingStorage();
+        window.location.href = "/filters.html";
+      });
+    }
   </script>
 </body>
 </html>
