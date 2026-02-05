@@ -199,6 +199,56 @@
       margin: 12px auto 0;
       background: #fff;
       display: block;
+      cursor: zoom-in;
+    }
+
+    .question-image {
+      cursor: zoom-in;
+    }
+
+    .image-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      z-index: 30;
+    }
+
+    .image-modal-content {
+      position: relative;
+      max-width: min(92vw, 980px);
+      max-height: 88vh;
+      background: #fff;
+      border-radius: 16px;
+      border: 1px solid #e9d5ff;
+      box-shadow: var(--shadow);
+      padding: 16px;
+    }
+
+    .image-modal-content img {
+      display: block;
+      max-width: 100%;
+      max-height: calc(88vh - 48px);
+      object-fit: contain;
+    }
+
+    .image-modal-close {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      width: 32px;
+      height: 32px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: #fff;
+      cursor: pointer;
+      font-size: 18px;
+      line-height: 30px;
+      text-align: center;
+      color: var(--accent);
     }
 
     .score-box {
@@ -429,6 +479,7 @@
       border: 1px solid #e9d5ff;
       padding: 8px 10px;
       border-radius: 10px;
+      white-space: pre-wrap;
     }
 
     .divider {
@@ -515,6 +566,13 @@
         <button class="btn btn-ghost" id="summaryClose" type="button">Закрыть</button>
         <button class="btn btn-primary" id="summaryRestart" type="button">Начать заново</button>
       </div>
+    </div>
+  </div>
+
+  <div id="imageModal" class="image-modal hidden">
+    <div class="image-modal-content">
+      <button class="image-modal-close" id="imageModalClose" type="button">×</button>
+      <img id="imageModalImg" alt="Увеличенное изображение">
     </div>
   </div>
 
@@ -881,6 +939,30 @@
       alert("Ссылка скопирована");
     });
 
+    const imageModal = document.getElementById("imageModal");
+    const imageModalImg = document.getElementById("imageModalImg");
+    const imageModalClose = document.getElementById("imageModalClose");
+    function openImageModal(src) {
+      if (!src) return;
+      imageModalImg.src = src;
+      imageModal.classList.remove("hidden");
+    }
+    function closeImageModal() {
+      imageModal.classList.add("hidden");
+      imageModalImg.removeAttribute("src");
+    }
+    imageModal.addEventListener("click", (event) => {
+      if (event.target === imageModal) closeImageModal();
+    });
+    imageModalClose.addEventListener("click", closeImageModal);
+
+    document.getElementById("questionImage").addEventListener("click", () => {
+      openImageModal(document.getElementById("questionImage").src);
+    });
+    document.getElementById("solutionImage").addEventListener("click", () => {
+      openImageModal(document.getElementById("solutionImage").src);
+    });
+
     function recordAttempt() {
       if (!currentTask || !currentTask.subject) return;
       const key = "taskAttempts";
@@ -895,7 +977,11 @@
 
     function normalizeQuestionText(text) {
       return String(text || "")
-        .replace(/\s+/g, " ")
+        .replace(/\\n/g, "\n")
+        .replace(/\r\n/g, "\n")
+        .replace(/[ \t]+/g, " ")
+        .replace(/ *\n */g, "\n")
+        .replace(/\n{3,}/g, "\n\n")
         .trim();
     }
 
@@ -904,7 +990,22 @@
       if (options && options.normalize) {
         value = normalizeQuestionText(value);
       }
-      element.textContent = value;
+      if (element && element.id === "question") {
+        let formatted = String(value || "");
+        if (!formatted.includes("\n")) {
+          formatted = formatted
+            .replace(/\.\s+(?=[A-ZА-Я])/g, ".\n\n")
+            .replace(/\s+(?=\d+\))/g, "\n");
+        }
+        const escaped = formatted
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/\n/g, "<br>");
+        element.innerHTML = escaped;
+      } else {
+        element.textContent = value;
+      }
       if (window.MathJax && window.MathJax.typesetPromise) {
         window.MathJax.typesetPromise([element]);
       }
