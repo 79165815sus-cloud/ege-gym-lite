@@ -302,6 +302,7 @@
       const subjectSelect = document.getElementById("subject");
       subjectSelect.value = "Математика профиль";
       updateExamTaskOptions();
+      updateTaskCountOptions();
     }
 
     function fillSelect(id, items) {
@@ -330,6 +331,19 @@
           updateExamTypeText();
         }
       } else if (subject === "Русский язык") {
+        options = Array.from({ length: 27 }, (_, i) => i + 1);
+        if (!examSwitch.checked) {
+          examSwitch.checked = true;
+          updateExamTypeText();
+        }
+      } else if (subject === "Биология") {
+        options = Array.from({ length: 28 }, (_, i) => i + 1);
+        if (!examSwitch.checked) {
+          examSwitch.checked = true;
+          updateExamTypeText();
+        }
+      } else if (subject === "Химия") {
+        options = Array.from({ length: 34 }, (_, i) => i + 1);
         if (!examSwitch.checked) {
           examSwitch.checked = true;
           updateExamTypeText();
@@ -350,9 +364,52 @@
       }
     }
 
+    async function updateTaskCountOptions() {
+      const modeSwitch = document.getElementById("modeSwitch");
+      if (modeSwitch.checked) return;
+      const taskCountSelect = document.getElementById("taskCount");
+      const subject = document.getElementById("subject").value;
+      const examSwitch = document.getElementById("examSwitch");
+      const examTaskNumber = document.getElementById("examTaskNumber").value;
+      const previous = taskCountSelect.value;
+      taskCountSelect.innerHTML = "<option value=\"\">Любое</option>";
+      if (!subject) return;
+
+      const params = new URLSearchParams();
+      params.set("examType", examSwitch.checked ? "ЕГЭ" : "ОГЭ");
+      params.set("subject", subject);
+      if (examTaskNumber) params.set("examTaskNumber", examTaskNumber);
+      const listUrl = "/api/tasks-public?" + params.toString();
+      const res = await fetch(listUrl);
+      if (!res.ok) return;
+      const items = await res.json();
+      const max = Array.isArray(items) ? items.length : 0;
+      if (max <= 0) return;
+
+      const base = [1, 5, 10, 15, 20, 30, 40, 50, 60, 70, 80, 90, 100];
+      const values = base.filter((value) => value <= max);
+      if (!values.includes(max)) values.push(max);
+      values.sort((a, b) => a - b);
+      values.forEach((value) => {
+        const option = document.createElement("option");
+        option.value = String(value);
+        option.textContent = value === max ? `Все (${value})` : String(value);
+        taskCountSelect.appendChild(option);
+      });
+      if (previous && [...taskCountSelect.options].some((opt) => opt.value === previous)) {
+        taskCountSelect.value = previous;
+      } else if (values.includes(10)) {
+        taskCountSelect.value = "10";
+      } else {
+        taskCountSelect.value = String(max);
+      }
+    }
+
     function getVariantCountBySubject(subject) {
       if (subject === "Русский язык") return "27";
       if (subject === "Математика профиль") return "19";
+      if (subject === "Биология") return "28";
+      if (subject === "Химия") return "34";
       return "";
     }
 
@@ -439,9 +496,18 @@
       }
     }
 
-    document.getElementById("subject").addEventListener("change", updateExamTaskOptions);
-    document.getElementById("examTaskNumber").addEventListener("change", handleExamTaskChange);
-    document.getElementById("examSwitch").addEventListener("change", updateExamTypeText);
+    document.getElementById("subject").addEventListener("change", () => {
+      updateExamTaskOptions();
+      updateTaskCountOptions();
+    });
+    document.getElementById("examTaskNumber").addEventListener("change", () => {
+      handleExamTaskChange();
+      updateTaskCountOptions();
+    });
+    document.getElementById("examSwitch").addEventListener("change", () => {
+      updateExamTypeText();
+      updateTaskCountOptions();
+    });
     document.getElementById("modeSwitch").addEventListener("change", () => {
       updateModeText();
       updateModeVisibility();
