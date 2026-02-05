@@ -545,17 +545,23 @@
     let hasTriedAnswer = false;
     let manualCheck = false;
     let manualScoreMax = null;
-    let giftShown = false;
+    let giftShown = sessionStorage.getItem("giftShown") === "1";
     let completedCount = 0;
     let hasLoadedOnce = false;
     let sequenceTasks = null;
     let advanceNext = false;
+    let sequenceMode = false;
+    let sequenceIndex = null;
     const anonId = getAnonId();
 
     async function load() {
       const params = new URLSearchParams(window.location.search);
       const rawCount = params.get("count");
       const sequence = params.get("sequence") === "1";
+      sequenceMode = sequence;
+      if (!sequenceMode) {
+        sequenceIndex = null;
+      }
       const startIndexParam = params.get("startIndex");
       if (remainingCount === null && rawCount && !sequence) {
         const parsed = Number(rawCount);
@@ -563,11 +569,17 @@
         remainingCount = totalCount;
       }
       function applyStartIndexIfNeeded() {
-        if (!startIndexParam || currentIndex !== null || !totalCount) return;
+        if (!startIndexParam || !totalCount) return;
         const startIndex = Number(startIndexParam);
         if (Number.isFinite(startIndex) && startIndex >= 1 && startIndex <= totalCount) {
-          currentIndex = startIndex;
-          remainingCount = totalCount - startIndex + 1;
+          if (sequenceMode) {
+            if (sequenceIndex === null) {
+              sequenceIndex = startIndex - 1;
+            }
+          } else if (currentIndex === null) {
+            currentIndex = startIndex;
+            remainingCount = totalCount - startIndex + 1;
+          }
         }
       }
       applyStartIndexIfNeeded();
@@ -607,16 +619,20 @@
           applyStartIndexIfNeeded();
           saveTrainingList(sequenceTasks);
         }
-        if (advanceNext && currentIndex !== null) {
-          if (totalCount && currentIndex >= totalCount) {
+        if (sequenceIndex === null) {
+          sequenceIndex = 0;
+        }
+        if (advanceNext) {
+          sequenceIndex += 1;
+        }
+        if (totalCount && sequenceIndex >= totalCount) {
             showSummary();
             advanceNext = false;
             return;
-          }
-          currentIndex += 1;
         }
-        const index = currentIndex ? currentIndex - 1 : 0;
-        currentTask = sequenceTasks[index];
+        currentTask = sequenceTasks[sequenceIndex];
+        currentIndex = sequenceIndex + 1;
+        remainingCount = totalCount - sequenceIndex;
         advanceNext = false;
       } else {
       const url = params.toString() ? "/api/task?" + params.toString() : "/api/task";
@@ -650,11 +666,13 @@
       }
       if (currentTask.subtopic) metaParts.push(currentTask.subtopic);
       document.getElementById("meta").innerText = metaParts.join(" · ");
-      if (remainingCount !== null && totalCount !== null) {
-        if (currentIndex === null) {
+      if (totalCount !== null) {
+        if (!sequenceMode && remainingCount !== null) {
           currentIndex = totalCount - remainingCount + 1;
+        } else if (currentIndex === null) {
+          currentIndex = 1;
         }
-        const remainingAfter = Math.max(remainingCount - 1, 0);
+        const remainingAfter = Math.max(totalCount - currentIndex, 0);
         document.getElementById("planInfo").innerText =
           "Задание " + currentIndex + " из " + totalCount +
           " · Осталось: " + remainingAfter;
@@ -714,7 +732,7 @@
         document.getElementById("answerButton").classList.add("hidden");
       }
 
-      if (remainingCount !== null) {
+      if (remainingCount !== null && !sequenceMode) {
         remainingCount -= 1;
       }
       saveTrainingMeta(currentTask);
@@ -774,8 +792,12 @@
     function jumpTo(targetIndex) {
       if (totalCount === null || remainingCount === null) return;
       if (targetIndex < 1 || targetIndex > totalCount) return;
-      currentIndex = targetIndex;
-      remainingCount = totalCount - targetIndex + 1;
+      if (sequenceMode) {
+        sequenceIndex = targetIndex - 1;
+      } else {
+        currentIndex = targetIndex;
+        remainingCount = totalCount - targetIndex + 1;
+      }
       load();
     }
 
@@ -912,6 +934,7 @@
     }
     function showGift() {
       giftShown = true;
+      sessionStorage.setItem("giftShown", "1");
       sessionStorage.setItem("lastQuizUrl", window.location.href);
       if (currentIndex !== null) {
         sessionStorage.setItem("nextQuizIndex", String(currentIndex + 1));
@@ -1034,6 +1057,7 @@
       sessionStorage.removeItem("trainingScores");
       sessionStorage.removeItem("trainingMeta");
       sessionStorage.removeItem("trainingList");
+      sessionStorage.removeItem("giftShown");
       Object.keys(sessionStorage).forEach((key) => {
         if (key.startsWith("manualScore:")) sessionStorage.removeItem(key);
       });
