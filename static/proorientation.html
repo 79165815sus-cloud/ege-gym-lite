@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Профориентация — Качалка</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f5f3ff;
+      --card: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --primary: #7c3aed;
+      --primary-hover: #6d28d9;
+      --accent: #4c1d95;
+      --border: #e5e7eb;
+      --shadow: 0 16px 32px rgba(15, 23, 42, 0.12);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, Arial, sans-serif;
+      background-color: var(--bg);
+      background-image:
+        linear-gradient(rgba(245, 243, 255, 0.92), rgba(245, 243, 255, 0.92)),
+        url("/bg.jpg");
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      color: var(--text);
+    }
+
+    .modal-backdrop {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 16px;
+      background: rgba(15, 23, 42, 0.2);
+    }
+
+    .card {
+      position: relative;
+      background: var(--card);
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      padding: 26px 26px 22px;
+      width: min(860px, 100%);
+    }
+
+    .header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      padding-right: 56px;
+    }
+
+    h1 {
+      margin: 0 0 6px;
+      font-size: 24px;
+      letter-spacing: -0.01em;
+      color: var(--accent);
+    }
+
+    .subtitle {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.4;
+    }
+
+    .services-menu {
+      position: absolute;
+      right: 16px;
+      top: 16px;
+    }
+
+    .services-button {
+      border: 1px solid var(--border);
+      background: #fff;
+      border-radius: 10px;
+      padding: 8px;
+      cursor: pointer;
+      color: var(--accent);
+    }
+
+    .services-list {
+      position: absolute;
+      right: 0;
+      top: 44px;
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      box-shadow: 0 12px 24px rgba(15, 23, 42, 0.12);
+      min-width: 220px;
+      padding: 8px;
+      display: none;
+      z-index: 5;
+    }
+
+    .services-menu.open .services-list {
+      display: block;
+    }
+
+    .services-item {
+      display: block;
+      padding: 8px 10px;
+      text-decoration: none;
+      color: var(--text);
+      border-radius: 8px;
+      font-size: 14px;
+    }
+
+    .services-item:hover {
+      background: #f5f3ff;
+    }
+
+    .tests {
+      margin-top: 18px;
+      display: grid;
+      gap: 12px;
+    }
+
+    .test-card {
+      border: 1px solid #e9d5ff;
+      background: #faf7ff;
+      border-radius: 12px;
+      padding: 14px;
+      cursor: pointer;
+      transition: background 0.15s ease, border-color 0.15s ease;
+    }
+
+    .test-card:hover {
+      background: #f3e8ff;
+      border-color: #c4b5fd;
+    }
+
+    .test-title {
+      margin: 0 0 6px;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .test-preview {
+      margin: 0;
+      color: #2d2a44;
+      font-size: 14px;
+    }
+
+    .test-preview span {
+      color: var(--muted);
+    }
+
+    .test-questions {
+      margin-top: 10px;
+      padding-left: 18px;
+      color: #2d2a44;
+      font-size: 14px;
+    }
+
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="modal-backdrop">
+    <div class="card">
+      <div class="services-menu" id="servicesMenu">
+        <button class="services-button" type="button" aria-label="Сервисы">
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" width="20" height="20">
+            <rect x="4" y="4" width="6" height="6" rx="2" fill="currentColor"></rect>
+            <rect x="14" y="4" width="6" height="6" rx="2" fill="currentColor"></rect>
+            <rect x="4" y="14" width="6" height="6" rx="2" fill="currentColor"></rect>
+            <rect x="14" y="14" width="6" height="6" rx="2" fill="currentColor"></rect>
+          </svg>
+        </button>
+        <div class="services-list">
+          <a class="services-item" href="https://100points.ru/wiki/" target="_blank" rel="noopener noreferrer">📘 Учебник</a>
+          <a class="services-item" href="https://100points.ru/wiki/tips-and-tricks/" target="_blank" rel="noopener noreferrer">▶️ Медиа</a>
+          <a class="services-item" href="/home.html">🏠 Главная</a>
+          <a class="services-item" href="/filters.html">🏋️ Качалка</a>
+          <a class="services-item" href="/navigator.html">🧭 Навигатор поступления</a>
+          <a class="services-item" href="/proorientation.html">🎯 Профориентация</a>
+          <a class="services-item" href="https://100points.ru/courses/" target="_blank" rel="noopener noreferrer">🛍️ Магазин</a>
+        </div>
+      </div>
+
+      <div class="header">
+        <div>
+          <h1>Профориентация</h1>
+          <p class="subtitle">Короткие тесты, чтобы определить сильные стороны и интересы.</p>
+        </div>
+      </div>
+
+      <div class="tests">
+        <div class="test-card" data-test>
+          <h2 class="test-title">Тест “Сильные стороны”</h2>
+          <p class="test-preview">Вопрос 1: что тебе легче — анализировать данные или общаться с людьми? <span>…</span></p>
+          <ol class="test-questions hidden">
+            <li>Что тебе проще: анализировать данные или общаться с людьми?</li>
+            <li>Ты чаще выбираешь точность или скорость?</li>
+            <li>Тебе комфортнее работать одному или в команде?</li>
+          </ol>
+        </div>
+        <div class="test-card" data-test>
+          <h2 class="test-title">Тест “Профиль интересов”</h2>
+          <p class="test-preview">Вопрос 1: что тебе ближе — создавать новое или улучшать существующее? <span>…</span></p>
+          <ol class="test-questions hidden">
+            <li>Что тебе ближе: создавать новое или улучшать существующее?</li>
+            <li>Тебя больше вдохновляет идея или результат?</li>
+            <li>Ты чаще выбираешь стабильность или эксперименты?</li>
+          </ol>
+        </div>
+        <div class="test-card" data-test>
+          <h2 class="test-title">Тест “Стиль обучения”</h2>
+          <p class="test-preview">Вопрос 1: ты лучше усваиваешь через практику или через теорию? <span>…</span></p>
+          <ol class="test-questions hidden">
+            <li>Ты лучше усваиваешь через практику или через теорию?</li>
+            <li>Нужны ли тебе примеры перед тем, как решать самому?</li>
+            <li>Ты предпочитаешь короткие сессии или длинные занятия?</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const servicesMenu = document.getElementById("servicesMenu");
+    if (servicesMenu) {
+      const button = servicesMenu.querySelector("button");
+      button.addEventListener("click", () => {
+        servicesMenu.classList.toggle("open");
+      });
+      document.addEventListener("click", (event) => {
+        if (!servicesMenu.contains(event.target)) {
+          servicesMenu.classList.remove("open");
+        }
+      });
+    }
+
+    document.querySelectorAll("[data-test]").forEach((card) => {
+      card.addEventListener("click", () => {
+        const list = card.querySelector(".test-questions");
+        if (!list) return;
+        list.classList.toggle("hidden");
+      });
+    });
+  </script>
+</body>
+</html>

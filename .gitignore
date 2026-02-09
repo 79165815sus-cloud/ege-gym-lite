@@ -18,6 +18,13 @@ coverage.out
 # Env files
 .env
 
+# Local data
+users.json
+analytics.jsonl
+users.db
+users.db-shm
+users.db-wal
+
 # IDE
 .idea/
 .vscode/

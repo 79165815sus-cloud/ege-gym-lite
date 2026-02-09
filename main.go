@@ -2,6 +2,12 @@ package main
 
 import (
 	"bufio"
+	"crypto/hmac"
+	crand "crypto/rand"
+	"crypto/sha256"
+	"crypto/subtle"
+	"database/sql"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -17,6 +23,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	_ "modernc.org/sqlite"
 )
 
 type Task struct {
@@ -103,6 +111,309 @@ type AnalyticsEvent struct {
 	Event      string                 `json:"event"`
 	Properties map[string]interface{} `json:"properties,omitempty"`
 	Timestamp  string                 `json:"timestamp"`
+}
+
+type User struct {
+	ID           int    `json:"id"`
+	Email        string `json:"email"`
+	PasswordHash string `json:"passwordHash"`
+	Salt         string `json:"salt"`
+	CreatedAt    string `json:"createdAt"`
+	Role         string `json:"role"`
+}
+
+type PublicUser struct {
+	ID        int    `json:"id"`
+	Email     string `json:"email"`
+	CreatedAt string `json:"createdAt"`
+	Role      string `json:"role"`
+}
+
+var sessions = make(map[string]int)
+var sessionsMu sync.Mutex
+
+const sessionCookieName = "session_id"
+
+var userDB *sql.DB
+
+const roleAdmin = "admin"
+const roleUser = "user"
+
+var adminEmails = map[string]struct{}{
+	"79165815727@yandex.ru": {},
+}
+
+func isAdminEmail(email string) bool {
+	_, ok := adminEmails[strings.ToLower(strings.TrimSpace(email))]
+	return ok
+}
+
+func toPublicUser(user User) PublicUser {
+	return PublicUser{
+		ID:        user.ID,
+		Email:     user.Email,
+		CreatedAt: user.CreatedAt,
+		Role:      user.Role,
+	}
+}
+
+func initUserDB(path string) (*sql.DB, error) {
+	db, err := sql.Open("sqlite", path)
+	if err != nil {
+		return nil, err
+	}
+	if _, err := db.Exec(`PRAGMA journal_mode=WAL;`); err != nil {
+		return nil, err
+	}
+	if _, err := db.Exec(`
+		CREATE TABLE IF NOT EXISTS users (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			email TEXT NOT NULL UNIQUE,
+			password_hash TEXT NOT NULL,
+			salt TEXT NOT NULL,
+			created_at TEXT NOT NULL,
+			role TEXT NOT NULL DEFAULT 'user'
+		);
+	`); err != nil {
+		return nil, err
+	}
+	if _, err := db.Exec(`ALTER TABLE users ADD COLUMN role TEXT NOT NULL DEFAULT 'user'`); err != nil {
+		if !strings.Contains(strings.ToLower(err.Error()), "duplicate column") {
+			return nil, err
+		}
+	}
+	return db, nil
+}
+
+func getUserByEmail(db *sql.DB, email string) (User, bool, error) {
+	var user User
+	err := db.QueryRow(
+		`SELECT id, email, password_hash, salt, created_at, role FROM users WHERE LOWER(email) = LOWER(?) LIMIT 1`,
+		email,
+	).Scan(&user.ID, &user.Email, &user.PasswordHash, &user.Salt, &user.CreatedAt, &user.Role)
+	if errors.Is(err, sql.ErrNoRows) {
+		return User{}, false, nil
+	}
+	if err != nil {
+		return User{}, false, err
+	}
+	return user, true, nil
+}
+
+func getUserByID(db *sql.DB, id int) (User, bool, error) {
+	var user User
+	err := db.QueryRow(
+		`SELECT id, email, password_hash, salt, created_at, role FROM users WHERE id = ? LIMIT 1`,
+		id,
+	).Scan(&user.ID, &user.Email, &user.PasswordHash, &user.Salt, &user.CreatedAt, &user.Role)
+	if errors.Is(err, sql.ErrNoRows) {
+		return User{}, false, nil
+	}
+	if err != nil {
+		return User{}, false, err
+	}
+	return user, true, nil
+}
+
+func listUsers(db *sql.DB) ([]PublicUser, error) {
+	rows, err := db.Query(`SELECT id, email, created_at, role FROM users ORDER BY id ASC`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	users := make([]PublicUser, 0, 32)
+	for rows.Next() {
+		var item PublicUser
+		if err := rows.Scan(&item.ID, &item.Email, &item.CreatedAt, &item.Role); err != nil {
+			return nil, err
+		}
+		users = append(users, item)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return users, nil
+}
+
+func setUserRoleByEmail(db *sql.DB, email, role string) (bool, error) {
+	result, err := db.Exec(
+		`UPDATE users SET role = ? WHERE LOWER(email) = LOWER(?)`,
+		role, email,
+	)
+	if err != nil {
+		return false, err
+	}
+	affected, err := result.RowsAffected()
+	if err != nil {
+		return false, err
+	}
+	return affected > 0, nil
+}
+
+func migrateUsersJSON(db *sql.DB, path string) error {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return nil
+		}
+		return err
+	}
+	if strings.TrimSpace(string(data)) == "" {
+		return nil
+	}
+	var items []User
+	if err := json.Unmarshal(data, &items); err != nil {
+		return err
+	}
+	for _, user := range items {
+		if user.Email == "" || user.PasswordHash == "" || user.Salt == "" {
+			continue
+		}
+		createdAt := user.CreatedAt
+		if createdAt == "" {
+			createdAt = time.Now().UTC().Format(time.RFC3339)
+		}
+		role := strings.TrimSpace(strings.ToLower(user.Role))
+		if role == "" {
+			role = roleUser
+		}
+		if _, err := db.Exec(
+			`INSERT OR IGNORE INTO users (id, email, password_hash, salt, created_at, role) VALUES (?, ?, ?, ?, ?, ?)`,
+			user.ID, user.Email, user.PasswordHash, user.Salt, createdAt, role,
+		); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func ensureAdminEmails(db *sql.DB) error {
+	if _, err := db.Exec(`UPDATE users SET role = ? WHERE role IS NULL OR TRIM(role) = ''`, roleUser); err != nil {
+		return err
+	}
+	for email := range adminEmails {
+		if _, err := db.Exec(
+			`UPDATE users SET role = ? WHERE LOWER(email) = LOWER(?)`,
+			roleAdmin, email,
+		); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func pbkdf2Key(password, salt []byte, iter, keyLen int) []byte {
+	hLen := sha256.Size
+	numBlocks := (keyLen + hLen - 1) / hLen
+	var out []byte
+	for block := 1; block <= numBlocks; block++ {
+		mac := hmac.New(sha256.New, password)
+		mac.Write(salt)
+		mac.Write([]byte{
+			byte(block >> 24),
+			byte(block >> 16),
+			byte(block >> 8),
+			byte(block),
+		})
+		u := mac.Sum(nil)
+		t := make([]byte, len(u))
+		copy(t, u)
+		for i := 1; i < iter; i++ {
+			mac = hmac.New(sha256.New, password)
+			mac.Write(u)
+			u = mac.Sum(nil)
+			for j := range t {
+				t[j] ^= u[j]
+			}
+		}
+		out = append(out, t...)
+	}
+	return out[:keyLen]
+}
+
+func hashPassword(password, salt string) string {
+	key := pbkdf2Key([]byte(password), []byte(salt), 120000, 32)
+	return base64.RawStdEncoding.EncodeToString(key)
+}
+
+func verifyPassword(password, salt, expectedHash string) bool {
+	hash := hashPassword(password, salt)
+	return subtle.ConstantTimeCompare([]byte(hash), []byte(expectedHash)) == 1
+}
+
+func generateSessionID() (string, error) {
+	buf := make([]byte, 32)
+	if _, err := crand.Read(buf); err != nil {
+		return "", err
+	}
+	return base64.RawURLEncoding.EncodeToString(buf), nil
+}
+
+func setSessionCookie(w http.ResponseWriter, r *http.Request, sessionID string) {
+	cookie := &http.Cookie{
+		Name:     sessionCookieName,
+		Value:    sessionID,
+		Path:     "/",
+		HttpOnly: true,
+		SameSite: http.SameSiteLaxMode,
+		MaxAge:   7 * 24 * 60 * 60,
+	}
+	if r.TLS != nil {
+		cookie.Secure = true
+	}
+	http.SetCookie(w, cookie)
+}
+
+func clearSessionCookie(w http.ResponseWriter) {
+	http.SetCookie(w, &http.Cookie{
+		Name:     sessionCookieName,
+		Value:    "",
+		Path:     "/",
+		MaxAge:   -1,
+		HttpOnly: true,
+		SameSite: http.SameSiteLaxMode,
+	})
+}
+
+func getSessionUserID(r *http.Request) (int, bool) {
+	cookie, err := r.Cookie(sessionCookieName)
+	if err != nil || cookie.Value == "" {
+		return 0, false
+	}
+	sessionsMu.Lock()
+	defer sessionsMu.Unlock()
+	id, ok := sessions[cookie.Value]
+	return id, ok
+}
+
+func requireUser(w http.ResponseWriter, r *http.Request) (User, bool) {
+	userID, ok := getSessionUserID(r)
+	if !ok {
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		return User{}, false
+	}
+	user, exists, err := getUserByID(userDB, userID)
+	if err != nil {
+		http.Error(w, "failed to load user", http.StatusInternalServerError)
+		return User{}, false
+	}
+	if !exists {
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		return User{}, false
+	}
+	return user, true
+}
+
+func requireAdmin(w http.ResponseWriter, r *http.Request) (User, bool) {
+	user, ok := requireUser(w, r)
+	if !ok {
+		return User{}, false
+	}
+	if strings.ToLower(strings.TrimSpace(user.Role)) != roleAdmin {
+		http.Error(w, "forbidden", http.StatusForbidden)
+		return User{}, false
+	}
+	return user, true
 }
 
 func toPublic(task Task) TaskPublic {
@@ -254,6 +565,8 @@ func answersEqual(expected Answer, given string) bool {
 
 func main() {
 	const tasksPath = "tasks.json"
+	const usersDBPath = "users.db"
+	const legacyUsersPath = "users.json"
 	const uploadsDir = "./static/uploads"
 
 	loadedTasks, err := loadTasks(tasksPath)
@@ -264,8 +577,237 @@ func main() {
 		log.Fatal("tasks.json is empty")
 	}
 	tasks = loadedTasks
+	userDB, err = initUserDB(usersDBPath)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer userDB.Close()
+	if err := migrateUsersJSON(userDB, legacyUsersPath); err != nil {
+		log.Fatal(err)
+	}
+	if err := ensureAdminEmails(userDB); err != nil {
+		log.Fatal(err)
+	}
 
 	rand.Seed(time.Now().UnixNano())
+
+	// API: регистрация
+	http.HandleFunc("/api/signup", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+		r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
+		var req struct {
+			Email    string `json:"email"`
+			Password string `json:"password"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			http.Error(w, "bad request", http.StatusBadRequest)
+			return
+		}
+		email := strings.TrimSpace(strings.ToLower(req.Email))
+		password := strings.TrimSpace(req.Password)
+		if email == "" || !strings.Contains(email, "@") {
+			http.Error(w, "invalid email", http.StatusBadRequest)
+			return
+		}
+		if len(password) < 6 {
+			http.Error(w, "password too short", http.StatusBadRequest)
+			return
+		}
+
+		if _, exists, err := getUserByEmail(userDB, email); err != nil {
+			http.Error(w, "failed to check user", http.StatusInternalServerError)
+			return
+		} else if exists {
+			http.Error(w, "user already exists", http.StatusConflict)
+			return
+		}
+
+		saltBytes := make([]byte, 16)
+		if _, err := crand.Read(saltBytes); err != nil {
+			http.Error(w, "failed to create user", http.StatusInternalServerError)
+			return
+		}
+		salt := base64.RawStdEncoding.EncodeToString(saltBytes)
+		createdAt := time.Now().UTC().Format(time.RFC3339)
+		role := roleUser
+		if isAdminEmail(email) {
+			role = roleAdmin
+		}
+		hash := hashPassword(password, salt)
+		result, err := userDB.Exec(
+			`INSERT INTO users (email, password_hash, salt, created_at, role) VALUES (?, ?, ?, ?, ?)`,
+			email, hash, salt, createdAt, role,
+		)
+		if err != nil {
+			http.Error(w, "failed to save user", http.StatusInternalServerError)
+			return
+		}
+		newID, err := result.LastInsertId()
+		if err != nil {
+			http.Error(w, "failed to save user", http.StatusInternalServerError)
+			return
+		}
+		newUser := User{
+			ID:           int(newID),
+			Email:        email,
+			PasswordHash: hash,
+			Salt:         salt,
+			CreatedAt:    createdAt,
+			Role:         role,
+		}
+
+		sessionID, err := generateSessionID()
+		if err != nil {
+			http.Error(w, "failed to create session", http.StatusInternalServerError)
+			return
+		}
+		sessionsMu.Lock()
+		sessions[sessionID] = newUser.ID
+		sessionsMu.Unlock()
+		setSessionCookie(w, r, sessionID)
+
+		json.NewEncoder(w).Encode(toPublicUser(newUser))
+	})
+
+	// API: вход
+	http.HandleFunc("/api/login", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+		r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
+		var req struct {
+			Email    string `json:"email"`
+			Password string `json:"password"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			http.Error(w, "bad request", http.StatusBadRequest)
+			return
+		}
+		email := strings.TrimSpace(strings.ToLower(req.Email))
+		password := strings.TrimSpace(req.Password)
+		if email == "" || password == "" {
+			http.Error(w, "email and password required", http.StatusBadRequest)
+			return
+		}
+
+		user, ok, err := getUserByEmail(userDB, email)
+		if err != nil {
+			http.Error(w, "failed to load user", http.StatusInternalServerError)
+			return
+		}
+		if ok && isAdminEmail(email) && strings.ToLower(strings.TrimSpace(user.Role)) != roleAdmin {
+			if _, err := setUserRoleByEmail(userDB, email, roleAdmin); err != nil {
+				http.Error(w, "failed to update role", http.StatusInternalServerError)
+				return
+			}
+			user.Role = roleAdmin
+		}
+		if !ok || !verifyPassword(password, user.Salt, user.PasswordHash) {
+			http.Error(w, "invalid credentials", http.StatusUnauthorized)
+			return
+		}
+
+		sessionID, err := generateSessionID()
+		if err != nil {
+			http.Error(w, "failed to create session", http.StatusInternalServerError)
+			return
+		}
+		sessionsMu.Lock()
+		sessions[sessionID] = user.ID
+		sessionsMu.Unlock()
+		setSessionCookie(w, r, sessionID)
+
+		json.NewEncoder(w).Encode(toPublicUser(user))
+	})
+
+	// API: выход
+	http.HandleFunc("/api/logout", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+		cookie, err := r.Cookie(sessionCookieName)
+		if err == nil && cookie.Value != "" {
+			sessionsMu.Lock()
+			delete(sessions, cookie.Value)
+			sessionsMu.Unlock()
+		}
+		clearSessionCookie(w)
+		w.WriteHeader(http.StatusNoContent)
+	})
+
+	// API: текущий пользователь
+	http.HandleFunc("/api/me", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+		user, ok := requireUser(w, r)
+		if !ok {
+			return
+		}
+		json.NewEncoder(w).Encode(toPublicUser(user))
+	})
+
+	// API: список пользователей (только админ)
+	http.HandleFunc("/api/admin/users", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+		if _, ok := requireAdmin(w, r); !ok {
+			return
+		}
+		items, err := listUsers(userDB)
+		if err != nil {
+			http.Error(w, "failed to load users", http.StatusInternalServerError)
+			return
+		}
+		json.NewEncoder(w).Encode(items)
+	})
+
+	// API: назначить роль (только админ)
+	http.HandleFunc("/api/admin/role", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+		if _, ok := requireAdmin(w, r); !ok {
+			return
+		}
+		var req struct {
+			Email string `json:"email"`
+			Role  string `json:"role"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			http.Error(w, "bad request", http.StatusBadRequest)
+			return
+		}
+		email := strings.TrimSpace(strings.ToLower(req.Email))
+		if email == "" || !strings.Contains(email, "@") {
+			http.Error(w, "invalid email", http.StatusBadRequest)
+			return
+		}
+		role := strings.TrimSpace(strings.ToLower(req.Role))
+		if role != roleAdmin && role != roleUser {
+			http.Error(w, "invalid role", http.StatusBadRequest)
+			return
+		}
+		updated, err := setUserRoleByEmail(userDB, email, role)
+		if err != nil {
+			http.Error(w, "failed to update role", http.StatusInternalServerError)
+			return
+		}
+		if !updated {
+			http.Error(w, "user not found", http.StatusNotFound)
+			return
+		}
+		w.WriteHeader(http.StatusNoContent)
+	})
 
 	// API: получить задачу
 	http.HandleFunc("/api/task", func(w http.ResponseWriter, r *http.Request) {
@@ -309,7 +851,7 @@ func main() {
 		}
 
 		var req struct {
-			ID     int `json:"id"`
+			ID     int    `json:"id"`
 			Answer string `json:"answer"`
 		}
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -486,6 +1028,9 @@ func main() {
 			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 			return
 		}
+		if _, ok := requireAdmin(w, r); !ok {
+			return
+		}
 
 		analyticsMu.Lock()
 		defer analyticsMu.Unlock()
@@ -526,6 +1071,9 @@ func main() {
 	http.HandleFunc("/api/upload", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
 			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+		if _, ok := requireAdmin(w, r); !ok {
 			return
 		}
 
@@ -599,6 +1147,9 @@ func main() {
 
 	// API: полный список задач (админка)
 	http.HandleFunc("/api/tasks", func(w http.ResponseWriter, r *http.Request) {
+		if _, ok := requireAdmin(w, r); !ok {
+			return
+		}
 		switch r.Method {
 		case http.MethodGet:
 			tasksMu.Lock()

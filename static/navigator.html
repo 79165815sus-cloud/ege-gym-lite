@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Навигатор поступления — Качалка</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f5f3ff;
+      --card: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --primary: #7c3aed;
+      --primary-hover: #6d28d9;
+      --accent: #4c1d95;
+      --border: #e5e7eb;
+      --shadow: 0 16px 32px rgba(15, 23, 42, 0.12);
+      --ok: #16a34a;
+      --bad: #dc2626;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, Arial, sans-serif;
+      background-color: var(--bg);
+      background-image:
+        linear-gradient(rgba(245, 243, 255, 0.92), rgba(245, 243, 255, 0.92)),
+        url("/bg.jpg");
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      color: var(--text);
+    }
+
+    .modal-backdrop {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 16px;
+      background: rgba(15, 23, 42, 0.2);
+    }
+
+    .services-menu {
+      position: absolute;
+      right: 16px;
+      top: 16px;
+    }
+
+    .services-button {
+      border: 1px solid var(--border);
+      background: #fff;
+      border-radius: 10px;
+      padding: 8px;
+      cursor: pointer;
+      color: var(--accent);
+    }
+
+    .services-list {
+      position: absolute;
+      right: 0;
+      top: 44px;
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      box-shadow: 0 12px 24px rgba(15, 23, 42, 0.12);
+      min-width: 220px;
+      padding: 8px;
+      display: none;
+      z-index: 5;
+    }
+
+    .services-menu.open .services-list {
+      display: block;
+    }
+
+    .services-item {
+      display: block;
+      padding: 8px 10px;
+      text-decoration: none;
+      color: #1f2937;
+      border-radius: 8px;
+      font-size: 14px;
+    }
+
+    .services-item:hover {
+      background: #f5f3ff;
+    }
+
+    .card {
+      position: relative;
+      background: var(--card);
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      padding: 26px 26px 22px;
+      width: min(980px, 100%);
+    }
+
+    .header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      padding-right: 56px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 26px;
+      letter-spacing: -0.01em;
+      color: var(--accent);
+    }
+
+    .subtitle {
+      margin: 0 0 6px;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.4;
+    }
+
+
+    .steps {
+      margin: 16px 0 10px;
+      display: grid;
+      gap: 10px;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    }
+
+    .step {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border: 1px solid #e9d5ff;
+      border-radius: 10px;
+      padding: 10px 12px;
+      background: #f5f3ff;
+      color: #2d2a44;
+    }
+
+    .step .badge {
+      background: #fff;
+      color: var(--accent);
+      font-weight: 700;
+      border-radius: 8px;
+      padding: 6px 10px;
+      border: 1px solid #e9d5ff;
+      min-width: 58px;
+      text-align: center;
+      font-size: 12px;
+    }
+
+    .step.active {
+      border-color: #c4b5fd;
+      background: #ede9fe;
+    }
+
+    .city-select {
+      display: grid;
+      gap: 6px;
+      margin: 8px 0 16px;
+    }
+
+    .city-select label {
+      font-size: 13px;
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    .city-select select {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 14px;
+      background: #fff;
+      color: var(--text);
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px 24px;
+      margin-top: 8px;
+    }
+
+    .field {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 0;
+      border-bottom: 1px dashed #e5e7eb;
+    }
+
+    .field:last-child {
+      border-bottom: none;
+    }
+
+    .field label {
+      font-size: 14px;
+      color: #1f2937;
+    }
+
+    .field input {
+      width: 96px;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 8px 10px;
+      text-align: center;
+      font-size: 14px;
+      background: #f8fafc;
+    }
+
+    .checkbox-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 12px;
+      color: #334155;
+      font-size: 14px;
+    }
+
+    .cta {
+      display: flex;
+      justify-content: center;
+      margin-top: 18px;
+    }
+
+    .btn {
+      border: 1px solid var(--border);
+      background: #fff;
+      border-radius: 12px;
+      padding: 10px 16px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .btn-primary {
+      border: none;
+      background: var(--primary);
+      color: #fff;
+      border-radius: 999px;
+      padding: 12px 28px;
+      font-size: 16px;
+      cursor: pointer;
+      box-shadow: 0 10px 20px rgba(124, 58, 237, 0.25);
+    }
+
+    .btn-primary:hover {
+      background: var(--primary-hover);
+    }
+
+    @media (max-width: 720px) {
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .services-menu {
+        position: static;
+        margin: 0 0 12px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="modal-backdrop">
+    <div class="card">
+      <div class="services-menu" id="servicesMenu">
+        <button class="services-button" type="button" aria-label="Сервисы">
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" width="20" height="20">
+            <rect x="4" y="4" width="6" height="6" rx="2" fill="currentColor"></rect>
+            <rect x="14" y="4" width="6" height="6" rx="2" fill="currentColor"></rect>
+            <rect x="4" y="14" width="6" height="6" rx="2" fill="currentColor"></rect>
+            <rect x="14" y="14" width="6" height="6" rx="2" fill="currentColor"></rect>
+          </svg>
+        </button>
+        <div class="services-list">
+          <a class="services-item" href="https://100points.ru/wiki/" target="_blank" rel="noopener noreferrer">📘 Учебник</a>
+          <a class="services-item" href="https://100points.ru/wiki/tips-and-tricks/" target="_blank" rel="noopener noreferrer">▶️ Медиа</a>
+          <a class="services-item" href="/home.html">🏠 Главная</a>
+          <a class="services-item" href="/filters.html">🏋️ Качалка</a>
+          <a class="services-item" href="/navigator.html">🧭 Навигатор поступления</a>
+          <a class="services-item" href="/proorientation.html">🎯 Профориентация</a>
+          <a class="services-item" href="https://100points.ru/courses/" target="_blank" rel="noopener noreferrer">🛍️ Магазин</a>
+        </div>
+      </div>
+
+      <div class="header">
+        <div>
+          <h1>Навигатор поступления 2026</h1>
+          <p class="subtitle">
+            Введи свои баллы ЕГЭ и получи подборку направлений и комбинаций предметов.
+          </p>
+        </div>
+      </div>
+
+      <div class="steps">
+        <div class="step active">
+          <div class="badge">1 шаг</div>
+          <div>Выберите город или введите ваши баллы ниже</div>
+        </div>
+        <div class="step">
+          <div class="badge">2 шаг</div>
+          <div>Результаты по вашим баллам</div>
+        </div>
+      </div>
+
+      <div class="city-select">
+        <label for="citySelect">Выберите город</label>
+        <select id="citySelect">
+          <option value="">Любой город</option>
+          <option>Москва</option>
+          <option>Санкт-Петербург</option>
+          <option>Казань</option>
+          <option>Новосибирск</option>
+          <option>Екатеринбург</option>
+        </select>
+      </div>
+
+      <div class="form-grid">
+        <div class="field"><label>Математика</label><input type="text" placeholder=""></div>
+        <div class="field"><label>Русский</label><input type="text" placeholder=""></div>
+        <div class="field"><label>Физика</label><input type="text" placeholder=""></div>
+        <div class="field"><label>Обществознание</label><input type="text" placeholder=""></div>
+        <div class="field"><label>История</label><input type="text" placeholder=""></div>
+        <div class="field"><label>Биология</label><input type="text" placeholder=""></div>
+        <div class="field"><label>Информатика</label><input type="text" placeholder=""></div>
+        <div class="field"><label>Химия</label><input type="text" placeholder=""></div>
+        <div class="field"><label>Литература</label><input type="text" placeholder=""></div>
+        <div class="field"><label>География</label><input type="text" placeholder=""></div>
+        <div class="field"><label>Иностранные языки</label><input type="text" placeholder=""></div>
+        <div class="field"><label>Экзамены в вузе</label><input type="text" placeholder=""></div>
+      </div>
+
+      <div class="checkbox-row">
+        <input id="uniExams" type="checkbox">
+        <label for="uniExams">Экзамены в вузе</label>
+      </div>
+
+      <div class="cta">
+        <button class="btn btn-primary" type="button">Найти мне вуз</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const servicesMenu = document.getElementById("servicesMenu");
+    if (servicesMenu) {
+      const button = servicesMenu.querySelector("button");
+      button.addEventListener("click", () => {
+        servicesMenu.classList.toggle("open");
+      });
+      document.addEventListener("click", (event) => {
+        if (!servicesMenu.contains(event.target)) {
+          servicesMenu.classList.remove("open");
+        }
+      });
+    }
+  </script>
+</body>
+</html>

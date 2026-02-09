@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Главная — Качалка</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f5f3ff;
+      --card: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --primary: #7c3aed;
+      --primary-hover: #6d28d9;
+      --accent: #4c1d95;
+      --border: #e5e7eb;
+      --shadow: 0 16px 32px rgba(15, 23, 42, 0.12);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, Arial, sans-serif;
+      background-color: var(--bg);
+      background-image:
+        linear-gradient(rgba(245, 243, 255, 0.92), rgba(245, 243, 255, 0.92)),
+        url("/bg.jpg");
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      color: var(--text);
+    }
+
+    .page {
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      padding: 28px 16px 48px;
+    }
+
+    .container {
+      width: min(980px, 100%);
+      display: grid;
+      gap: 18px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+      padding: 18px;
+      position: relative;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 24px;
+      color: var(--accent);
+    }
+
+    .section-heading {
+      font-size: 20px;
+    }
+
+    .section-title {
+      margin-bottom: 12px;
+    }
+
+    .subtitle {
+      margin: 6px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .section-subtitle {
+      margin: 6px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .services-menu {
+      position: relative;
+    }
+
+    .services-button {
+      border: 1px solid var(--border);
+      background: #fff;
+      border-radius: 10px;
+      padding: 8px;
+      cursor: pointer;
+      color: var(--accent);
+    }
+
+    .services-list {
+      position: absolute;
+      right: 0;
+      top: 44px;
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      box-shadow: 0 12px 24px rgba(15, 23, 42, 0.12);
+      min-width: 220px;
+      padding: 8px;
+      display: none;
+      z-index: 5;
+    }
+
+    .services-menu.open .services-list {
+      display: block;
+    }
+
+    .services-item {
+      display: block;
+      padding: 8px 10px;
+      text-decoration: none;
+      color: var(--text);
+      border-radius: 8px;
+      font-size: 14px;
+    }
+
+    .services-item:hover {
+      background: #f5f3ff;
+    }
+
+    .stories {
+      display: grid;
+      grid-auto-flow: column;
+      grid-auto-columns: minmax(140px, 1fr);
+      gap: 12px;
+      overflow-x: auto;
+      padding-bottom: 6px;
+    }
+
+    .story {
+      border: 1px solid #e9d5ff;
+      background: #faf7ff;
+      border-radius: 14px;
+      padding: 12px;
+      display: grid;
+      gap: 8px;
+      min-width: 150px;
+      align-content: start;
+    }
+
+    .story img {
+      width: 100%;
+      height: 90px;
+      object-fit: cover;
+      border-radius: 10px;
+      border: 1px solid #e9d5ff;
+      background: #fff;
+    }
+
+    .story span {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .news-grid {
+      display: grid;
+      gap: 12px;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    }
+
+    .news-card {
+      border: 1px solid #e9d5ff;
+      border-radius: 12px;
+      padding: 12px;
+      background: #fff;
+    }
+
+    .news-title {
+      margin: 0 0 6px;
+      font-weight: 700;
+      color: var(--accent);
+      font-size: 14px;
+    }
+
+    .news-text {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    .tiles {
+      display: grid;
+      gap: 12px;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    }
+
+    .tile {
+      border: 1px solid #e9d5ff;
+      border-radius: 14px;
+      padding: 14px;
+      background: #faf7ff;
+      display: grid;
+      gap: 6px;
+      min-height: 140px;
+      align-content: start;
+      transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease;
+    }
+
+    .tile:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 10px 20px rgba(124, 58, 237, 0.12);
+      border-color: #c4b5fd;
+    }
+
+    .tile-title {
+      margin: 0;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .tile-desc {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    .tile a {
+      color: var(--primary);
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .feed {
+      display: grid;
+      gap: 14px;
+    }
+
+    .post {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: #fff;
+      overflow: hidden;
+    }
+
+    .post-header {
+      padding: 12px 14px;
+      border-bottom: 1px solid #f1f5f9;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .post-title {
+      margin: 0;
+      font-weight: 700;
+      color: var(--accent);
+      font-size: 14px;
+    }
+
+    .post-time {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .post-body {
+      padding: 12px 14px;
+      color: var(--text);
+      font-size: 14px;
+      line-height: 1.4;
+    }
+
+    .post-media {
+      position: relative;
+      background: #0f172a;
+      aspect-ratio: 16 / 9;
+    }
+
+    .post-media img,
+    .post-media video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .play-overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(15, 23, 42, 0.35);
+      cursor: pointer;
+    }
+
+    .play-btn {
+      width: 58px;
+      height: 58px;
+      border-radius: 50%;
+      border: 2px solid #fff;
+      background: rgba(255, 255, 255, 0.15);
+      display: grid;
+      place-items: center;
+    }
+
+    .play-btn::before {
+      content: "";
+      border-style: solid;
+      border-width: 10px 0 10px 16px;
+      border-color: transparent transparent transparent #fff;
+      margin-left: 4px;
+    }
+
+    .story-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 20;
+    }
+
+    .story-modal.hidden {
+      display: none;
+    }
+
+    .story-modal-content {
+      width: min(420px, 100%);
+      background: #111827;
+      border-radius: 18px;
+      overflow: hidden;
+      position: relative;
+      box-shadow: 0 20px 40px rgba(15, 23, 42, 0.35);
+      color: #fff;
+    }
+
+    .story-modal-content img {
+      width: 100%;
+      height: 360px;
+      object-fit: cover;
+      display: block;
+    }
+
+    .story-modal-caption {
+      padding: 12px 14px 16px;
+    }
+
+    .story-modal-caption h2 {
+      margin: 0 0 6px;
+      font-size: 16px;
+    }
+
+    .story-modal-caption p {
+      margin: 0;
+      color: #cbd5f5;
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    .story-close {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      border: none;
+      background: rgba(255, 255, 255, 0.18);
+      color: #fff;
+      font-size: 18px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="container">
+      <div class="card">
+        <div class="header">
+          <div>
+            <h1>100Б поможет на каждом шаге</h1>
+          </div>
+          <div class="services-menu" id="servicesMenu">
+            <button class="services-button" type="button" aria-label="Сервисы">
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" width="20" height="20">
+                <rect x="4" y="4" width="6" height="6" rx="2" fill="currentColor"></rect>
+                <rect x="14" y="4" width="6" height="6" rx="2" fill="currentColor"></rect>
+                <rect x="4" y="14" width="6" height="6" rx="2" fill="currentColor"></rect>
+                <rect x="14" y="14" width="6" height="6" rx="2" fill="currentColor"></rect>
+              </svg>
+            </button>
+            <div class="services-list">
+              <a class="services-item" href="/home.html">🏠 Главная</a>
+              <a class="services-item" href="/proorientation.html">🎯 Профориентация</a>
+              <a class="services-item" href="/navigator.html">🧭 Навигатор поступления</a>
+              <a class="services-item" href="https://100points.ru/wiki/" target="_blank" rel="noopener noreferrer">📘 Учебник</a>
+              <a class="services-item" href="/filters.html">🏋️ Качалка</a>
+              <a class="services-item" href="https://100points.ru/wiki/tips-and-tricks/" target="_blank" rel="noopener noreferrer">▶️ Медиа</a>
+              <a class="services-item" href="/cabinet.html">👤 Кабинет</a>
+              <a class="services-item" href="/stats.html">📊 Статистика</a>
+              <a class="services-item" href="https://100points.ru/courses/" target="_blank" rel="noopener noreferrer">🛍️ Магазин</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h1 class="section-heading">Новости</h1>
+        <div class="stories">
+          <div class="story" data-story data-title="Новый формат" data-text="Разбор ошибок по неделям">
+            <img src="/bg.jpg" alt="Сторис: новый формат">
+            <strong>Новый формат</strong>
+            <span>Разбор ошибок по неделям</span>
+          </div>
+          <div class="story" data-story data-title="Челлендж" data-text="7 дней по 20 задач">
+            <img src="/bg.jpg" alt="Сторис: челлендж">
+            <strong>Челлендж</strong>
+            <span>7 дней по 20 задач</span>
+          </div>
+          <div class="story" data-story data-title="Подборка" data-text="ТОП темы месяца">
+            <img src="/bg.jpg" alt="Сторис: подборка">
+            <strong>Подборка</strong>
+            <span>ТОП темы месяца</span>
+          </div>
+          <div class="story" data-story data-title="Совет дня" data-text="Как не терять баллы">
+            <img src="/bg.jpg" alt="Сторис: совет дня">
+            <strong>Совет дня</strong>
+            <span>Как не терять баллы</span>
+          </div>
+          <div class="story" data-story data-title="Бонус" data-text="Шаблон плана">
+            <img src="/bg.jpg" alt="Сторис: бонус">
+            <strong>Бонус</strong>
+            <span>Шаблон плана</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h1 class="section-heading section-title">Выбери профессию, Выбери ВУЗ, Выбери готовиться к экзамену</h1>
+        <div class="tiles">
+          <div class="tile">
+            <p class="tile-title">Качалка</p>
+            <p class="tile-desc">Тренируйся по темам и отслеживай ошибки.</p>
+            <a href="/filters.html">Открыть</a>
+          </div>
+          <div class="tile">
+            <p class="tile-title">Учебник</p>
+            <p class="tile-desc">Теория, формулы и справочные материалы.</p>
+            <a href="https://100points.ru/wiki/" target="_blank" rel="noopener noreferrer">Открыть</a>
+          </div>
+          <div class="tile">
+            <p class="tile-title">Медиа</p>
+            <p class="tile-desc">Разборы, видео и полезные подборки.</p>
+            <a href="https://100points.ru/wiki/tips-and-tricks/" target="_blank" rel="noopener noreferrer">Открыть</a>
+          </div>
+          <div class="tile">
+            <p class="tile-title">Навигатор поступления</p>
+            <p class="tile-desc">Подбор вузов по баллам и предметам.</p>
+            <a href="/navigator.html">Открыть</a>
+          </div>
+          <div class="tile">
+            <p class="tile-title">Профориентация</p>
+            <p class="tile-desc">Короткие тесты по интересам и навыкам.</p>
+            <a href="/proorientation.html">Открыть</a>
+          </div>
+          <div class="tile">
+            <p class="tile-title">Кабинет</p>
+            <p class="tile-desc">Твой профиль, статистика и друзья.</p>
+            <a href="/cabinet.html">Открыть</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h1 class="section-heading">Лента</h1>
+        <div class="feed">
+          <div class="post">
+            <div class="post-header">
+              <p class="post-title">Разбор задания №15</p>
+              <span class="post-time">Сегодня</span>
+            </div>
+            <div class="post-media">
+              <img src="/bg.jpg" alt="Превью поста">
+            </div>
+            <div class="post-body">
+              Короткий разбор с акцентом на типичные ошибки и как их избежать.
+            </div>
+          </div>
+          <div class="post">
+            <div class="post-header">
+              <p class="post-title">Видео: быстрые лайфхаки</p>
+              <span class="post-time">Вчера</span>
+            </div>
+            <div class="post-media" data-video>
+              <video preload="metadata" poster="/bg.jpg">
+                <source src="https://www.w3schools.com/html/mov_bbb.mp4" type="video/mp4">
+              </video>
+              <div class="play-overlay">
+                <div class="play-btn"></div>
+              </div>
+            </div>
+            <div class="post-body">
+              Нажми play, чтобы посмотреть короткий ролик с подсказками.
+            </div>
+          </div>
+          <div class="post">
+            <div class="post-header">
+              <p class="post-title">Чек‑лист перед экзаменом</p>
+              <span class="post-time">2 дня назад</span>
+            </div>
+            <div class="post-media">
+              <img src="/bg.jpg" alt="Чек-лист">
+            </div>
+            <div class="post-body">
+              Собрали короткий чек‑лист, чтобы не упустить детали перед ЕГЭ.
+            </div>
+          </div>
+          <div class="post">
+            <div class="post-header">
+              <p class="post-title">Видео: настройка фокуса</p>
+              <span class="post-time">3 дня назад</span>
+            </div>
+            <div class="post-media" data-video>
+              <video preload="metadata" poster="/bg.jpg">
+                <source src="https://www.w3schools.com/html/mov_bbb.mp4" type="video/mp4">
+              </video>
+              <div class="play-overlay">
+                <div class="play-btn"></div>
+              </div>
+            </div>
+            <div class="post-body">
+              Мини‑гайд по концентрации во время подготовки.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="story-modal hidden" id="storyModal">
+    <div class="story-modal-content">
+      <button class="story-close" type="button" id="storyClose">×</button>
+      <img id="storyModalImage" src="/bg.jpg" alt="Сторис">
+      <div class="story-modal-caption">
+        <h2 id="storyModalTitle">Сторис</h2>
+        <p id="storyModalText">Описание</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const servicesMenu = document.getElementById("servicesMenu");
+    if (servicesMenu) {
+      const button = servicesMenu.querySelector("button");
+      button.addEventListener("click", () => {
+        servicesMenu.classList.toggle("open");
+      });
+      document.addEventListener("click", (event) => {
+        if (!servicesMenu.contains(event.target)) {
+          servicesMenu.classList.remove("open");
+        }
+      });
+    }
+
+    document.querySelectorAll("[data-video]").forEach((block) => {
+      const video = block.querySelector("video");
+      const overlay = block.querySelector(".play-overlay");
+      if (!video || !overlay) return;
+      overlay.addEventListener("click", () => {
+        overlay.style.display = "none";
+        video.play().catch(() => {
+          overlay.style.display = "flex";
+        });
+      });
+      video.addEventListener("pause", () => {
+        overlay.style.display = "flex";
+      });
+      video.addEventListener("ended", () => {
+        overlay.style.display = "flex";
+      });
+    });
+
+    const storyModal = document.getElementById("storyModal");
+    const storyClose = document.getElementById("storyClose");
+    const storyModalTitle = document.getElementById("storyModalTitle");
+    const storyModalText = document.getElementById("storyModalText");
+    const storyModalImage = document.getElementById("storyModalImage");
+
+    document.querySelectorAll("[data-story]").forEach((story) => {
+      story.addEventListener("click", () => {
+        const title = story.getAttribute("data-title") || "Сторис";
+        const text = story.getAttribute("data-text") || "";
+        const img = story.querySelector("img")?.getAttribute("src") || "/bg.jpg";
+        if (storyModalTitle) storyModalTitle.textContent = title;
+        if (storyModalText) storyModalText.textContent = text;
+        if (storyModalImage) storyModalImage.src = img;
+        if (storyModal) storyModal.classList.remove("hidden");
+      });
+    });
+
+    function closeStoryModal() {
+      if (storyModal) storyModal.classList.add("hidden");
+    }
+
+    if (storyClose) {
+      storyClose.addEventListener("click", closeStoryModal);
+    }
+    if (storyModal) {
+      storyModal.addEventListener("click", (event) => {
+        if (event.target === storyModal) closeStoryModal();
+      });
+    }
+  </script>
+</body>
+</html>

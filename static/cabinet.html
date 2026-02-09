@@ -1,0 +1,1127 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Личный кабинет — Качалка</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f5f3ff;
+      --card: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --primary: #7c3aed;
+      --primary-hover: #6d28d9;
+      --accent: #4c1d95;
+      --border: #e5e7eb;
+      --shadow: 0 16px 32px rgba(15, 23, 42, 0.12);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, Arial, sans-serif;
+      background-color: var(--bg);
+      background-image:
+        linear-gradient(rgba(245, 243, 255, 0.92), rgba(245, 243, 255, 0.92)),
+        url("/bg.jpg");
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      color: var(--text);
+    }
+
+    .page {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 16px;
+    }
+
+    .card {
+      width: 100%;
+      max-width: 520px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+      padding: 24px;
+      display: grid;
+      gap: 12px;
+      position: relative;
+    }
+
+    .student-card {
+      display: grid;
+      grid-template-columns: 72px 1fr;
+      gap: 12px;
+      align-items: center;
+      padding: 12px;
+      border: 1px solid #e9d5ff;
+      border-radius: 14px;
+      background: #f7f3ff;
+    }
+
+    .page-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+
+    .auth-link {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      border: 1px solid #e9d5ff;
+      background: #f5f3ff;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    .auth-link svg {
+      width: 18px;
+      height: 18px;
+      display: block;
+    }
+
+    .services-menu {
+      position: relative;
+    }
+
+    .services-button {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      border: 1px solid #e9d5ff;
+      background: #f5f3ff;
+      color: var(--accent);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+
+    .services-list {
+      position: absolute;
+      top: 44px;
+      right: 0;
+      min-width: 160px;
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      box-shadow: var(--shadow);
+      padding: 6px;
+      display: none;
+      gap: 4px;
+      z-index: 30;
+    }
+
+    .services-menu:hover .services-list,
+    .services-menu:focus-within .services-list {
+      display: grid;
+    }
+
+    .services-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      border-radius: 8px;
+      color: var(--accent);
+      text-decoration: none;
+      font-size: 14px;
+    }
+
+    .services-item:hover {
+      background: #f5f3ff;
+    }
+
+    .student-avatar {
+      width: 72px;
+      height: 72px;
+      border-radius: 18px;
+      background: #ede9fe;
+      border: 2px solid #d8b4fe;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 34px;
+      box-shadow: 0 12px 22px rgba(124, 58, 237, 0.25);
+    }
+
+    .student-name {
+      font-weight: 700;
+      color: var(--accent);
+      font-size: 16px;
+    }
+
+    .student-meta {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 8px;
+      margin-top: 6px;
+    }
+
+    .tab-btn {
+      padding: 6px 12px;
+      border-radius: 10px;
+      border: 1px solid #e9d5ff;
+      background: #f5f3ff;
+      color: var(--accent);
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .tab-btn.active {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: #fff;
+    }
+
+    .tab-panel.hidden {
+      display: none;
+    }
+
+    .friends-grid {
+      display: grid;
+      gap: 10px;
+    }
+
+    .friends-toolbar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    .friends-toolbar input {
+      accent-color: var(--primary);
+    }
+
+    .friend-self {
+      border: 1px dashed #c4b5fd;
+      background: #f8f7ff;
+    }
+
+    .friend-card {
+      display: grid;
+      grid-template-columns: 40px 1fr auto;
+      gap: 10px;
+      align-items: center;
+      padding: 10px 12px;
+      border: 1px solid #e9d5ff;
+      border-radius: 12px;
+      background: #faf7ff;
+    }
+
+    .friend-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      background: #ede9fe;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+    }
+
+    .friend-name {
+      font-weight: 600;
+      color: var(--accent);
+      font-size: 13px;
+    }
+
+    .friend-meta {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .friend-compare {
+      font-size: 12px;
+      color: var(--accent);
+      text-align: right;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 22px;
+    }
+
+    .info {
+      display: grid;
+      gap: 6px;
+      font-size: 14px;
+    }
+
+    .label {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .btn {
+      padding: 10px 14px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: #fff;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: #fff;
+    }
+
+    .btn-primary:hover { background: var(--primary-hover); }
+
+    .links {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      font-size: 13px;
+    }
+
+    .link {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    .analytics {
+      margin-top: 8px;
+      padding: 16px;
+      border-radius: 16px;
+      background: #fff;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      display: grid;
+      gap: 14px;
+    }
+
+    .analytics-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .duo-stats {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .duo-card {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: #f5f3ff;
+      border: 1px solid #e9d5ff;
+      font-size: 12px;
+      color: var(--accent);
+      min-height: 32px;
+    }
+
+    .duo-icon {
+      width: 22px;
+      height: 22px;
+      border-radius: 999px;
+      background: #ede9fe;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+    }
+
+    .duo-value {
+      font-weight: 700;
+      font-size: 14px;
+      color: var(--accent);
+    }
+
+    .analytics h2 {
+      margin: 0;
+      font-size: 16px;
+      color: var(--accent);
+    }
+
+    .subject-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: #f5f3ff;
+      border: 1px solid #e9d5ff;
+      font-size: 12px;
+      color: var(--accent);
+    }
+
+    .subject-chip select {
+      border: none;
+      background: transparent;
+      font-size: 12px;
+      color: var(--accent);
+      font-family: inherit;
+      outline: none;
+      cursor: pointer;
+    }
+
+
+    .analytics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 10px;
+    }
+
+    .analytics-card {
+      background: #f5f3ff;
+      border: 1px solid #e9d5ff;
+      border-radius: 12px;
+      padding: 10px 12px;
+    }
+
+    .analytics-label {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .analytics-value {
+      font-size: 20px;
+      font-weight: 700;
+      margin-top: 4px;
+      color: var(--accent);
+    }
+
+    .analytics-bars {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 6px;
+      align-items: end;
+      height: 60px;
+    }
+
+    .analytics-bar {
+      width: 100%;
+      border-radius: 6px;
+      background: var(--primary);
+      opacity: 0.9;
+      min-height: 28px;
+      position: relative;
+    }
+
+    .analytics-bar-wrap {
+      display: grid;
+      gap: 4px;
+      align-items: end;
+      justify-items: center;
+      position: relative;
+    }
+
+    .analytics-bar-count {
+      font-size: 11px;
+      color: var(--accent);
+    }
+
+    .analytics-bar-day {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 6px;
+      text-align: center;
+      color: #fff;
+      font-size: 11px;
+      font-weight: 600;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+      pointer-events: none;
+    }
+    .analytics-bar.muted {
+      background: #ddd6fe;
+      opacity: 0.7;
+    }
+
+    .analytics-footer {
+      font-size: 12px;
+      color: var(--muted);
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .analytics-footer span {
+      color: #fff;
+    }
+
+    .analytics-week-total {
+      font-size: 12px;
+      color: var(--accent);
+      margin-top: 22px;
+      text-align: left;
+      font-weight: 700;
+    }
+
+    .analytics-list {
+      display: grid;
+      gap: 6px;
+      font-size: 12px;
+      color: var(--text);
+    }
+
+    .analytics-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: #f5f3ff;
+      color: var(--accent);
+      font-size: 11px;
+      border: 1px solid #e9d5ff;
+    }
+
+    .analytics-note {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .analytics-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+
+    .analytics-table th,
+    .analytics-table td {
+      border: 1px solid var(--border);
+      padding: 6px 8px;
+      text-align: left;
+    }
+
+    .analytics-table th {
+      background: #fafafa;
+    }
+
+    .cell-filter {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-left: 6px;
+    }
+
+    .cell-filter select {
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 2px 6px;
+      font-size: 11px;
+      font-family: inherit;
+      background: #fff;
+    }
+
+    .admin-panel {
+      border-top: 1px solid var(--border);
+      padding-top: 12px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .admin-panel h2 {
+      margin: 0;
+      font-size: 16px;
+    }
+
+    .admin-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .admin-row input, .admin-row select {
+      flex: 1 1 160px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 10px;
+      font-size: 13px;
+      font-family: inherit;
+    }
+
+    .admin-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+
+    .admin-table th, .admin-table td {
+      border: 1px solid var(--border);
+      padding: 6px 8px;
+      text-align: left;
+    }
+
+    .admin-table th {
+      background: #fafafa;
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="card">
+      <div class="page-actions">
+        <div class="services-menu">
+          <button class="services-button" type="button" aria-label="Сервисы">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <rect x="4" y="4" width="6" height="6" rx="2" fill="currentColor"></rect>
+              <rect x="14" y="4" width="6" height="6" rx="2" fill="currentColor"></rect>
+              <rect x="4" y="14" width="6" height="6" rx="2" fill="currentColor"></rect>
+              <rect x="14" y="14" width="6" height="6" rx="2" fill="currentColor"></rect>
+            </svg>
+          </button>
+          <div class="services-list">
+            <a class="services-item" href="https://100points.ru/wiki/" target="_blank" rel="noopener noreferrer">📘 Учебник</a>
+            <a class="services-item" href="https://100points.ru/wiki/tips-and-tricks/" target="_blank" rel="noopener noreferrer">▶️ Медиа</a>
+            <a class="services-item" href="/home.html">🏠 Главная</a>
+            <a class="services-item" href="/filters.html">🏋️ Качалка</a>
+            <a class="services-item" href="/navigator.html">🧭 Навигатор поступления</a>
+            <a class="services-item" href="/proorientation.html">🎯 Профориентация</a>
+            <a class="services-item" href="https://100points.ru/courses/" target="_blank" rel="noopener noreferrer">🛍️ Магазин</a>
+          </div>
+        </div>
+        <a class="auth-link" href="/cabinet.html" aria-label="Личный кабинет">
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Zm0 2c-4 0-7 2.2-7 5v1h14v-1c0-2.8-3-5-7-5Z" fill="currentColor"></path>
+          </svg>
+        </a>
+      </div>
+      <div class="student-card">
+        <div class="student-avatar" title="Ученик">😄</div>
+        <div>
+          <div class="student-name">Привет, Андрей</div>
+          <div class="student-meta">Ты с нами уже 105 дней</div>
+        </div>
+      </div>
+      <div class="tabs">
+        <button class="tab-btn active" data-tab="stats">Статистика</button>
+        <button class="tab-btn" data-tab="friends">Друзья</button>
+      </div>
+
+      <div id="tab-stats" class="tab-panel">
+        <div class="info">
+          <div>
+            <div class="label">Email</div>
+            <div id="email">—</div>
+          </div>
+        </div>
+
+        <div class="analytics">
+          <div class="analytics-card">
+            <div id="weekBars" class="analytics-bars"></div>
+            <div id="weekTotal" class="analytics-week-total"></div>
+          </div>
+
+          <div class="analytics-header">
+            <div class="duo-stats">
+              <div class="duo-card">
+                <span class="duo-icon">🔥</span>
+                <span>Страйк</span>
+                <span id="duoStreak" class="duo-value">0</span>
+                <span>дн.</span>
+              </div>
+              <div class="duo-card">
+                <span class="duo-icon">✅</span>
+                <span>Всего</span>
+                <span id="duoWeek" class="duo-value">0</span>
+                <span>зад.</span>
+              </div>
+            </div>
+            <div class="subject-chip">
+              <select id="subjectSelect">
+                <option value="Математика профиль" selected>Математика профиль</option>
+                <option value="Русский язык">Русский язык</option>
+                <option value="Биология">Биология</option>
+                <option value="Химия">Химия</option>
+              </select>
+            </div>
+          </div>
+          <div class="analytics-card">
+            <div class="analytics-label" style="margin-bottom: 8px;">Прогресс по заданиям (№1–19)</div>
+            <table class="analytics-table">
+              <thead>
+                <tr>
+                  <th>№</th>
+                  <th>Решено</th>
+                  <th>
+                    % верных
+                    <span class="cell-filter">
+                      <select id="sortAccuracy">
+                        <option value="">—</option>
+                        <option value="desc">↓</option>
+                        <option value="asc">↑</option>
+                      </select>
+                    </span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody id="taskStatsBody"></tbody>
+            </table>
+            <div class="analytics-note" style="margin-top: 8px;">Демо-данные для примера отображения.</div>
+          </div>
+        </div>
+      </div>
+
+      <div id="tab-friends" class="tab-panel hidden">
+        <div class="friends-toolbar">
+          <label>
+            <input id="toggleSelf" type="checkbox" checked>
+            Показывать мой результат другим
+          </label>
+          <button class="btn btn-ghost" id="addFriend" type="button">Добавить друга</button>
+        </div>
+        <div class="friends-grid">
+          <div id="friendSelf" class="friend-card friend-self">
+            <div class="friend-avatar">😄</div>
+            <div>
+              <div class="friend-name">Ты</div>
+              <div class="friend-meta">Страйк: 20 дней · Всего: 162 заданий</div>
+            </div>
+            <div class="friend-compare">33 задания</div>
+          </div>
+          <div class="friend-card">
+            <div class="friend-avatar">🧑‍🎓</div>
+            <div>
+              <div class="friend-name">Маша Иванова</div>
+              <div class="friend-meta">Страйк: 12 дней · Всего: 118 заданий</div>
+            </div>
+            <div class="friend-compare">Ты +12 заданий</div>
+          </div>
+          <div class="friend-card">
+            <div class="friend-avatar">🧑‍💻</div>
+            <div>
+              <div class="friend-name">Кирилл Смирнов</div>
+              <div class="friend-meta">Страйк: 7 дней · Всего: 95 заданий</div>
+            </div>
+            <div class="friend-compare">Ты −5 заданий</div>
+          </div>
+          <div class="friend-card">
+            <div class="friend-avatar">👩‍🔬</div>
+            <div>
+              <div class="friend-name">Алина Петрова</div>
+              <div class="friend-meta">Страйк: 5 дней · Всего: 84 задания</div>
+            </div>
+            <div class="friend-compare">Ты +3 задания</div>
+          </div>
+          <div class="friend-card">
+            <div class="friend-avatar">👨‍🏫</div>
+            <div>
+              <div class="friend-name">Денис Орлов</div>
+              <div class="friend-meta">Страйк: 9 дней · Всего: 106 заданий</div>
+            </div>
+            <div class="friend-compare">Ты +1 задание</div>
+          </div>
+        </div>
+      </div>
+      <button class="btn btn-primary" id="logoutButton" type="button">Выйти</button>
+      <div class="links">
+        <a class="link" href="/filters.html">Качалка</a>
+        <a class="link" href="/filters.html">План</a>
+        <a class="link admin-only" href="/admin.html">Админка</a>
+        <a class="link admin-only" href="/admin-analytics.html">Аналитика</a>
+      </div>
+
+      <div class="admin-panel admin-only">
+        <h2>Управление ролями</h2>
+        <div class="admin-row">
+          <input id="roleEmail" type="email" placeholder="email пользователя">
+          <select id="roleSelect">
+            <option value="user">Пользователь</option>
+            <option value="admin">Админ</option>
+          </select>
+          <button class="btn btn-primary" id="roleSave" type="button">Назначить</button>
+        </div>
+        <div id="roleStatus" class="label"></div>
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Email</th>
+              <th>Роль</th>
+              <th>Создан</th>
+            </tr>
+          </thead>
+          <tbody id="usersBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let currentUserEmail = "";
+
+    const hardcodedStats = {
+      streak: 20,
+      total: 162,
+      weekCount: 33
+    };
+
+    function formatDate(value) {
+      if (!value) return "—";
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return value;
+      return date.toLocaleString("ru-RU");
+    }
+
+    function getAttempts() {
+      try {
+        const raw = localStorage.getItem("taskAttempts");
+        const parsed = JSON.parse(raw || "[]");
+        return Array.isArray(parsed) ? parsed : [];
+      } catch (error) {
+        return [];
+      }
+    }
+
+    function toDayKey(ts) {
+      const date = new Date(ts);
+      if (Number.isNaN(date.getTime())) return "";
+      return date.toISOString().slice(0, 10);
+    }
+
+    function buildWeekSeries(attempts) {
+      const now = new Date();
+      const dayIndex = (now.getDay() + 6) % 7;
+      const start = new Date(now);
+      start.setDate(now.getDate() - dayIndex);
+      start.setHours(0, 0, 0, 0);
+      const counts = Array(7).fill(0);
+      attempts.forEach((item) => {
+        const ts = Number(item.timestamp || 0);
+        const date = new Date(ts);
+        if (Number.isNaN(date.getTime())) return;
+        const diffDays = Math.floor((date - start) / (24 * 60 * 60 * 1000));
+        if (diffDays >= 0 && diffDays < 7) counts[diffDays] += 1;
+      });
+      return counts;
+    }
+
+    function computeStreak(attempts) {
+      const days = new Set();
+      attempts.forEach((item) => {
+        const key = toDayKey(item.timestamp);
+        if (key) days.add(key);
+      });
+      let streak = 0;
+      const cursor = new Date();
+      for (let i = 0; i < 365; i += 1) {
+        const key = cursor.toISOString().slice(0, 10);
+        if (days.has(key)) {
+          streak += 1;
+        } else {
+          break;
+        }
+        cursor.setDate(cursor.getDate() - 1);
+      }
+      return streak;
+    }
+
+    function renderWhoopStats() {
+      const attempts = getAttempts();
+      const now = Date.now();
+      const isDemo = attempts.length === 0;
+      const subject = getSelectedSubject();
+      const demo = getDemoBySubject(subject);
+      const demoWeekSeries = demo.weekSeries;
+      const demoWeekCount = demoWeekSeries.reduce((sum, v) => sum + v, 0);
+      const demoTotal = demo.total;
+      const demoStreak = demo.streak;
+
+      const friendStats = isDemo ? getFriendSelfStats() : null;
+      let total = isDemo ? (friendStats?.total ?? demoTotal) : attempts.length;
+      let weekCount = isDemo
+        ? buildWeekCountFromTotal(total, demoWeekCount)
+        : attempts.filter((item) => now - Number(item.timestamp || 0) <= 7 * 24 * 60 * 60 * 1000).length;
+      let streak = isDemo ? (friendStats?.streak ?? demoStreak) : computeStreak(attempts);
+
+      if (currentUserEmail) {
+        total = hardcodedStats.total;
+        weekCount = hardcodedStats.weekCount;
+        streak = hardcodedStats.streak;
+      }
+      const statTotal = document.getElementById("statTotal");
+      const statWeek = document.getElementById("statWeek");
+      const statStreak = document.getElementById("statStreak");
+      const duoWeek = document.getElementById("duoWeek");
+      const duoStreak = document.getElementById("duoStreak");
+      if (statTotal) statTotal.textContent = String(total);
+      if (statWeek) statWeek.textContent = String(weekCount);
+      if (statStreak) statStreak.textContent = String(streak);
+      if (duoWeek) duoWeek.textContent = String(total);
+      if (duoStreak) duoStreak.textContent = String(streak);
+
+      const weekSeries = (isDemo || currentUserEmail)
+        ? buildWeekSeriesFromCount(weekCount, demoWeekSeries)
+        : buildWeekSeries(attempts);
+      const max = Math.max(...weekSeries, 1);
+      const bars = document.getElementById("weekBars");
+      bars.innerHTML = "";
+      const dayLabels = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"];
+      weekSeries.forEach((value, index) => {
+        const wrap = document.createElement("div");
+        wrap.className = "analytics-bar-wrap";
+        const count = document.createElement("div");
+        count.className = "analytics-bar-count";
+        count.textContent = String(value);
+        const bar = document.createElement("div");
+        bar.className = "analytics-bar" + (value === 0 ? " muted" : "");
+        bar.style.height = Math.round((value / max) * 60) + "px";
+        const day = document.createElement("div");
+        day.className = "analytics-bar-day";
+        day.textContent = dayLabels[index] || "";
+        wrap.appendChild(count);
+        bar.appendChild(day);
+        wrap.appendChild(bar);
+        bars.appendChild(wrap);
+      });
+      const weekTotal = document.getElementById("weekTotal");
+      if (weekTotal) {
+        weekTotal.textContent = "За неделю: " + weekCount + " заданий";
+      }
+
+      // top subjects block removed
+    }
+
+    function getFriendSelfStats() {
+      const meta = document.querySelector("#friendSelf .friend-meta")?.textContent || "";
+      const streakMatch = meta.match(/Страйк:\s*(\d+)/i);
+      const totalMatch = meta.match(/Всего:\s*(\d+)/i);
+      const streak = streakMatch ? Number(streakMatch[1]) : null;
+      const total = totalMatch ? Number(totalMatch[1]) : null;
+      if (!Number.isFinite(streak) && !Number.isFinite(total)) return null;
+      return {
+        streak: Number.isFinite(streak) ? streak : null,
+        total: Number.isFinite(total) ? total : null
+      };
+    }
+
+    function buildWeekCountFromTotal(total, fallback) {
+      if (!Number.isFinite(total) || total <= 0) return fallback;
+      return Math.min(Math.max(Math.round(total * 0.06), 3), 42);
+    }
+
+    function buildWeekSeriesFromCount(weekCount, fallbackSeries) {
+      if (!Number.isFinite(weekCount) || weekCount <= 0) return fallbackSeries;
+      const base = Math.floor(weekCount / 7);
+      let remainder = weekCount % 7;
+      return Array.from({ length: 7 }, (_, idx) => {
+        const add = remainder > 0 ? 1 : 0;
+        if (remainder > 0) remainder -= 1;
+        return base + add;
+      });
+    }
+
+    function getDemoBySubject(subject) {
+      const data = {
+        "Математика профиль": {
+          total: 162,
+          weekSeries: [6, 4, 7, 5, 6, 3, 2],
+          streak: 20,
+          totalTasks: 19,
+          longStart: 13
+        },
+        "Русский язык": {
+          total: 138,
+          weekSeries: [3, 5, 4, 6, 3, 2, 4],
+          streak: 20,
+          totalTasks: 27,
+          longStart: 27
+        },
+        "Биология": {
+          total: 112,
+          weekSeries: [2, 3, 4, 3, 2, 3, 1],
+          streak: 20,
+          totalTasks: 28,
+          longStart: 22
+        },
+        "Химия": {
+          total: 83,
+          weekSeries: [1, 2, 3, 2, 2, 1, 2],
+          streak: 20,
+          totalTasks: 34,
+          longStart: 29
+        }
+      };
+      return data[subject] || data["Математика профиль"];
+    }
+
+    function getSelectedSubject() {
+      const select = document.getElementById("subjectSelect");
+      return select ? select.value : "Математика профиль";
+    }
+
+    function initSubjectSelect() {
+      const select = document.getElementById("subjectSelect");
+      if (!select) return;
+      select.addEventListener("change", () => {
+        renderWhoopStats();
+        renderTaskProgressDemo();
+      });
+    }
+
+    function buildDemoTasks(totalTasks, longStart) {
+      const tasks = [];
+      for (let i = 1; i <= totalTasks; i += 1) {
+        const isLong = longStart && i >= longStart;
+        const baseAccuracy = isLong ? 55 : 75;
+        const accuracy = Math.max(35, Math.min(90, baseAccuracy - (i % 5) * 3));
+        const solvedBase = isLong ? 6 : 16;
+        const solved = Math.max(3, solvedBase + (i % 4) * 2);
+        tasks.push({ task: i, solved, accuracy });
+      }
+      return tasks;
+    }
+
+    function renderTaskProgressDemo() {
+      const subject = getSelectedSubject();
+      const subjectDemo = getDemoBySubject(subject);
+      const demo = buildDemoTasks(subjectDemo.totalTasks, subjectDemo.longStart);
+      const sortDirection = document.getElementById("sortAccuracy")?.value || "";
+      const body = document.getElementById("taskStatsBody");
+      if (!body) return;
+      body.innerHTML = "";
+      const sorted = [...demo].sort((a, b) => {
+        if (sortDirection === "asc") return a.accuracy - b.accuracy;
+        if (sortDirection === "desc") return b.accuracy - a.accuracy;
+        return a.task - b.task;
+      });
+      sorted.forEach((item) => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td>№${item.task}</td>
+          <td>${item.solved}</td>
+          <td>${item.accuracy}%</td>
+        `;
+        body.appendChild(row);
+      });
+    }
+
+    async function loadProfile() {
+      const res = await fetch("/api/me");
+      if (res.status === 401) {
+        window.location.href = "/login.html?from=" + encodeURIComponent(window.location.pathname);
+        return;
+      }
+      if (!res.ok) return;
+      const data = await res.json();
+      document.getElementById("email").textContent = data.email || "—";
+      currentUserEmail = String(data.email || "");
+      renderWhoopStats();
+      const role = (data.role || "user").toLowerCase();
+      if (role !== "admin") {
+        document.querySelectorAll(".admin-only").forEach((el) => el.remove());
+        return;
+      }
+      loadUsers();
+    }
+
+    async function logout() {
+      await fetch("/api/logout", { method: "POST" });
+      window.location.href = "/login.html";
+    }
+
+    function setRoleStatus(text) {
+      document.getElementById("roleStatus").textContent = text || "";
+    }
+
+    async function loadUsers() {
+      const res = await fetch("/api/admin/users");
+      if (!res.ok) {
+        setRoleStatus("Не удалось загрузить пользователей");
+        return;
+      }
+      const data = await res.json();
+      const body = document.getElementById("usersBody");
+      body.innerHTML = "";
+      data.forEach((user) => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td>${user.id}</td>
+          <td>${user.email}</td>
+          <td>${user.role || "user"}</td>
+          <td>${formatDate(user.createdAt)}</td>
+        `;
+        body.appendChild(row);
+      });
+    }
+
+    async function saveRole() {
+      const email = document.getElementById("roleEmail").value.trim();
+      const role = document.getElementById("roleSelect").value;
+      setRoleStatus("Сохранение...");
+      const res = await fetch("/api/admin/role", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, role })
+      });
+      if (!res.ok) {
+        const text = await res.text();
+        setRoleStatus(text || "Ошибка");
+        return;
+      }
+      setRoleStatus("Готово");
+      loadUsers();
+    }
+
+    document.getElementById("logoutButton").addEventListener("click", logout);
+    const roleSave = document.getElementById("roleSave");
+    if (roleSave) {
+      roleSave.addEventListener("click", saveRole);
+    }
+    document.querySelectorAll(".tab-btn").forEach((button) => {
+      button.addEventListener("click", () => {
+        document.querySelectorAll(".tab-btn").forEach((btn) => btn.classList.remove("active"));
+        button.classList.add("active");
+        const target = button.getAttribute("data-tab");
+        document.getElementById("tab-stats").classList.toggle("hidden", target !== "stats");
+        document.getElementById("tab-friends").classList.toggle("hidden", target !== "friends");
+      });
+    });
+    const toggleSelf = document.getElementById("toggleSelf");
+    const friendSelf = document.getElementById("friendSelf");
+    if (toggleSelf && friendSelf) {
+      toggleSelf.addEventListener("change", () => {
+        friendSelf.classList.toggle("hidden", !toggleSelf.checked);
+      });
+    }
+    const addFriendButton = document.getElementById("addFriend");
+    if (addFriendButton) {
+      addFriendButton.addEventListener("click", () => {
+        alert("Скоро: добавление друзей через код/ссылку.");
+      });
+    }
+    initSubjectSelect();
+    renderWhoopStats();
+    const sortAccuracy = document.getElementById("sortAccuracy");
+    if (sortAccuracy) {
+      sortAccuracy.addEventListener("change", renderTaskProgressDemo);
+    }
+    renderTaskProgressDemo();
+    loadProfile();
+  </script>
+</body>
+</html>

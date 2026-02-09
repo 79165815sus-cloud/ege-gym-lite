@@ -169,8 +169,9 @@
         <h1>Админка — аналитика</h1>
         <div class="links">
           <a class="link" href="/admin.html">Задания</a>
+          <a class="link" href="/cabinet.html">Кабинет</a>
           <a class="link" href="/filters.html">План</a>
-          <a class="link" href="/">Качалка</a>
+          <a class="link" href="/filters.html">Качалка</a>
         </div>
       </div>
 
@@ -383,6 +384,15 @@
     async function loadAnalytics() {
       setStatus("Загрузка...");
       const res = await fetch("/api/analytics");
+      if (res.status === 401) {
+        window.location.href = "/login.html?from=" + encodeURIComponent(window.location.pathname);
+        return;
+      }
+      if (res.status === 403) {
+        alert("Доступ только для администратора.");
+        window.location.href = "/cabinet.html";
+        return;
+      }
       if (!res.ok) {
         setStatus("Ошибка загрузки");
         return;

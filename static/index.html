@@ -68,6 +68,12 @@
       gap: 12px;
     }
 
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
     .filters-link {
       font-size: 12px;
       color: var(--accent);
@@ -124,6 +130,7 @@
       font-size: 12px;
       color: var(--muted);
     }
+
 
     .chain {
       display: flex;
@@ -190,8 +197,115 @@
       background: #fff;
     }
 
+    .part-block {
+      margin: 0 0 16px;
+      padding: 12px;
+      border-radius: 12px;
+      border: 1px solid #e9d5ff;
+      background: #faf7ff;
+      display: grid;
+      gap: 10px;
+    }
+
+    .part-title {
+      font-size: 12px;
+      color: var(--accent);
+      letter-spacing: 0.02em;
+    }
+
+    .upload-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .upload-row .actions-right {
+      margin-left: auto;
+      display: inline-flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .file-input {
+      display: none;
+    }
+
+    .file-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 10px;
+      border: 1px solid #ddd6fe;
+      background: #f5f3ff;
+      color: var(--accent);
+      font-size: 12px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .file-name {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .part-preview {
+      width: 100%;
+      max-height: 240px;
+      object-fit: contain;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: #fff;
+    }
+
+    .score-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .score-row .actions-right {
+      margin-left: auto;
+      display: inline-flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .score-row input[type="number"] {
+      width: 90px;
+      padding: 6px 8px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      font-size: 12px;
+    }
+
+    .score-status {
+      color: var(--accent);
+      font-size: 12px;
+    }
+
+    .answer-controls {
+      display: flex;
+      gap: 10px;
+      flex: 1 1 auto;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .part-frame {
+      border: 1px solid #e9d5ff;
+      background: #fff;
+      border-radius: 10px;
+      padding: 10px;
+    }
+
     .row {
       display: flex;
+      align-items: center;
       gap: 10px;
       flex-wrap: wrap;
       margin-bottom: 16px;
@@ -242,12 +356,27 @@
     }
     .btn-ghost:hover { background: #f5f3ff; }
 
+    .btn-next {
+      margin-top: 0;
+    }
+
+    .second-part-active .btn-next {
+      margin-top: 12px;
+    }
+
     .btn-soft {
       background: #f5f3ff;
       border-color: #e9d5ff;
       color: var(--accent);
     }
     .btn-soft:hover { background: #ede9fe; }
+
+    .btn-contrast {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: #fff;
+    }
+    .btn-contrast:hover { background: var(--primary-hover); }
 
     .btn:disabled {
       opacity: 0.5;
@@ -258,11 +387,87 @@
       display: none !important;
     }
 
-    .menu {
+    .auth-link {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      border: 1px solid #e9d5ff;
+      background: #f5f3ff;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--accent);
+      text-decoration: none;
+      transition: background 0.15s ease, border-color 0.15s ease;
+    }
+
+    .auth-link:hover {
+      background: #ede9fe;
+      border-color: #ddd6fe;
+    }
+
+    .auth-link svg {
+      width: 18px;
+      height: 18px;
+      display: block;
+    }
+
+    .services-menu {
+      position: relative;
+    }
+
+    .services-button {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      border: 1px solid #e9d5ff;
+      background: #f5f3ff;
+      color: var(--accent);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+
+    .services-list {
       position: absolute;
-      top: 12px;
-      right: 12px;
-      z-index: 20;
+      top: 44px;
+      right: 0;
+      min-width: 160px;
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      box-shadow: var(--shadow);
+      padding: 6px;
+      display: none;
+      gap: 4px;
+      z-index: 30;
+    }
+
+    .services-menu:hover .services-list,
+    .services-menu:focus-within .services-list {
+      display: grid;
+    }
+
+    .services-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      border-radius: 8px;
+      color: var(--accent);
+      text-decoration: none;
+      font-size: 14px;
+    }
+
+    .services-item:hover {
+      background: #f5f3ff;
+    }
+    .menu {
+      display: flex;
+      justify-content: flex-end;
+      margin: 8px 0 12px;
+      position: relative;
     }
 
     .menu-button {
@@ -367,23 +572,58 @@
       border-radius: 10px;
     }
 
+    .ai-blocks {
+      margin: 8px 0 0;
+      padding: 0 0 0 18px;
+      color: #4a5568;
+    }
+
     .divider {
       height: 1px;
       background: var(--border);
       margin: 16px 0;
     }
+
+    .ai-tutor {
+      margin-top: 16px;
+      border: 1px solid #e9d5ff;
+      background: #faf7ff;
+      border-radius: 14px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .ai-tutor-title {
+      font-weight: 700;
+      color: var(--accent);
+      margin: 0;
+    }
+
+    .ai-prompts {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .ai-input-row {
+      display: flex;
+      gap: 10px;
+    }
+
+    .ai-input-row input {
+      flex: 1;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 14px;
+    }
   </style>
 </head>
 <body>
   <div class="page">
-    <div class="card">
-      <div class="menu">
-        <button id="menuButton" class="menu-button" type="button">⋯</button>
-        <div id="menuList" class="menu-list hidden">
-          <a class="menu-item" href="#" id="shareLink">Поделиться</a>
-          <a class="menu-item" href="mailto:support@100points.ru?subject=Сообщить%20об%20ошибке&body=Опишите%20проблему%20и%20укажите%20ссылку:" id="reportLink">Сообщить об ошибке</a>
-        </div>
-      </div>
+    <div class="card" id="taskCard">
       <div class="brand-header">
         <div class="brand">
           <div class="badge">100</div>
@@ -392,22 +632,86 @@
             <p class="subtitle">«Вижу цель — не вижу препятствий» — Джейсон Стетхем</p>
           </div>
         </div>
-        <a class="filters-link" href="/filters.html" id="resetLink">Начать заново</a>
+        <div class="header-actions">
+          <a class="filters-link" href="/filters.html" id="resetLink">Начать заново</a>
+          <div class="services-menu">
+            <button class="services-button" type="button" aria-label="Сервисы">
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <rect x="4" y="4" width="6" height="6" rx="2" fill="currentColor"></rect>
+                <rect x="14" y="4" width="6" height="6" rx="2" fill="currentColor"></rect>
+                <rect x="4" y="14" width="6" height="6" rx="2" fill="currentColor"></rect>
+                <rect x="14" y="14" width="6" height="6" rx="2" fill="currentColor"></rect>
+              </svg>
+            </button>
+            <div class="services-list">
+              <a class="services-item" href="https://100points.ru/wiki/" target="_blank" rel="noopener noreferrer">📘 Учебник</a>
+              <a class="services-item" href="https://100points.ru/wiki/tips-and-tricks/" target="_blank" rel="noopener noreferrer">▶️ Медиа</a>
+              <a class="services-item" href="/home.html">🏠 Главная</a>
+              <a class="services-item" href="/filters.html">🏋️ Качалка</a>
+              <a class="services-item" href="/navigator.html">🧭 Навигатор поступления</a>
+              <a class="services-item" href="/proorientation.html">🎯 Профориентация</a>
+              <a class="services-item" href="https://100points.ru/courses/" target="_blank" rel="noopener noreferrer">🛍️ Магазин</a>
+            </div>
+          </div>
+          <a id="authLink" class="auth-link" href="/login.html" aria-label="Войти или кабинет">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Zm0 2c-4 0-7 2.2-7 5v1h14v-1c0-2.8-3-5-7-5Z" fill="currentColor"></path>
+            </svg>
+          </a>
+        </div>
       </div>
 
       <p id="meta" class="meta"></p>
+      <div class="menu">
+        <button id="menuButton" class="menu-button" type="button">⋯</button>
+        <div id="menuList" class="menu-list hidden">
+          <a class="menu-item" href="#" id="shareLink">Поделиться</a>
+          <a class="menu-item" href="mailto:support@100points.ru?subject=Сообщить%20об%20ошибке&body=Опишите%20проблему%20и%20укажите%20ссылку:" id="reportLink">Сообщить об ошибке</a>
+        </div>
+      </div>
       <p id="planInfo" class="plan"></p>
       <p id="question" class="question">Загрузка...</p>
       <img id="questionImage" class="question-image hidden" alt="Иллюстрация к заданию">
 
-      <div class="row">
-        <input id="answer" type="number" placeholder="Введите ответ"/>
-        <button class="btn btn-primary" onclick="check()">Проверить</button>
-        <button class="btn btn-ghost" onclick="load()">Следующая</button>
+      <div id="secondPartBlock" class="part-block hidden">
+        <div class="part-title">Автопроверка – приложите решение</div>
+        <div class="upload-row">
+          <input id="solutionImage" class="file-input" type="file" accept="image/*">
+          <label class="file-label" for="solutionImage">Выбрать файл</label>
+          <span id="solutionFileName" class="file-name">Файл не выбран</span>
+          <span class="actions-right">
+            <button class="btn btn-contrast" id="checkSecond" type="button">Проверить</button>
+            <button class="btn btn-contrast" id="clearImage" type="button">Очистить</button>
+          </span>
+        </div>
+        <img id="solutionPreview" class="part-preview hidden" alt="Загруженное решение">
+        <p id="secondFeedback" class="hint hidden"></p>
+        <ul id="secondFeedbackBlocks" class="ai-blocks hidden"></ul>
+      </div>
+
+      <div id="secondPartScoreBlock" class="part-frame hidden">
+        <div class="part-title">Самопроверка</div>
+        <div class="score-row">
+          <span id="secondScoreLabel">Баллы (0–4)</span>
+          <input id="manualScore" type="number" min="0" max="4" step="1" placeholder="0">
+          <span class="actions-right">
+            <button class="btn btn-soft" id="secondSolution" type="button">Решение</button>
+            <button class="btn btn-soft" id="saveScore" type="button">Сохранить</button>
+          </span>
+          <span id="scoreStatus" class="score-status"></span>
+        </div>
       </div>
 
       <div class="row">
-        <button class="btn btn-soft" onclick="showAnswer()">Ответ</button>
+        <div id="answerControls" class="answer-controls">
+          <input id="answer" type="number" placeholder="Введите ответ"/>
+          <button class="btn btn-primary" onclick="check()">Проверить</button>
+        </div>
+        <button class="btn btn-ghost btn-next" onclick="load()">Следующая</button>
+      </div>
+
+      <div id="answerRow" class="row">
+        <button id="answerButton" class="btn btn-soft" onclick="showAnswer()">Ответ</button>
         <button class="btn btn-soft hidden" id="solutionButton" onclick="showSolution()">Решение</button>
       </div>
 
@@ -418,6 +722,18 @@
       <p id="result" class="result"></p>
       <p id="answerText" class="hint hidden"></p>
       <p id="solutionText" class="hint hidden"></p>
+
+      <div class="ai-tutor">
+        <div class="ai-tutor-title">Репетитор AI</div>
+        <div class="ai-prompts">
+          <button class="btn btn-soft" type="button" data-ai-prompt="Объясни теорию по теме этой задачи.">Объясни теорию</button>
+          <button class="btn btn-soft" type="button" data-ai-prompt="Подскажи решение пошагово, без готового ответа.">Подскажи решение</button>
+        </div>
+        <div class="ai-input-row">
+          <input id="aiTutorInput" type="text" placeholder="Напиши вопрос или уточнение..." />
+          <button class="btn btn-soft" type="button" id="aiTutorSend">Отправить</button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -451,13 +767,34 @@
     let hasLoadedOnce = false;
     let sequenceTasks = null;
     const anonId = getAnonId();
+    const secondPartBlock = document.getElementById("secondPartBlock");
+    const solutionImageInput = document.getElementById("solutionImage");
+    const solutionPreview = document.getElementById("solutionPreview");
+    const clearImageButton = document.getElementById("clearImage");
+    const checkSecondButton = document.getElementById("checkSecond");
+    const solutionFileName = document.getElementById("solutionFileName");
+    const secondFeedback = document.getElementById("secondFeedback");
+    const secondFeedbackBlocks = document.getElementById("secondFeedbackBlocks");
+    const secondSolutionButton = document.getElementById("secondSolution");
+    const manualScoreInput = document.getElementById("manualScore");
+    const saveScoreButton = document.getElementById("saveScore");
+    const scoreStatus = document.getElementById("scoreStatus");
+    const secondPartScoreBlock = document.getElementById("secondPartScoreBlock");
+    const answerControls = document.getElementById("answerControls");
+    const answerRow = document.getElementById("answerRow");
+    const answerButton = document.getElementById("answerButton");
+    const taskCard = document.getElementById("taskCard");
+    const aiTutorInput = document.getElementById("aiTutorInput");
+    const aiTutorSend = document.getElementById("aiTutorSend");
+    const aiPromptButtons = document.querySelectorAll("[data-ai-prompt]");
 
     async function load() {
       const params = new URLSearchParams(window.location.search);
       const rawCount = params.get("count");
       const sequence = params.get("sequence") === "1";
+      const errorsMode = params.get("mode") === "errors";
       const startIndexParam = params.get("startIndex");
-      if (remainingCount === null && rawCount && !sequence) {
+      if (remainingCount === null && rawCount && !sequence && !errorsMode) {
         const parsed = Number(rawCount);
         totalCount = Number.isFinite(parsed) && parsed > 0 ? parsed : null;
         remainingCount = totalCount;
@@ -479,11 +816,36 @@
       }
 
       if (remainingCount !== null && remainingCount <= 0) {
+        if (errorsMode) {
+          window.location.href = "/filters.html";
+          return;
+        }
         if (!giftShown) showGift();
         return;
       }
 
-      if (sequence) {
+      if (errorsMode) {
+        const allMistakes = readMistakeTasks();
+        const filteredMistakes = filterMistakeTasks(allMistakes, params);
+        filteredMistakes.sort((a, b) => {
+          if (a.examTaskNumber !== b.examTaskNumber) {
+            return (a.examTaskNumber || 0) - (b.examTaskNumber || 0);
+          }
+          return a.id - b.id;
+        });
+        sequenceTasks = filteredMistakes;
+        if (sequenceTasks.length === 0) {
+          showErrorsEmptyState();
+          return;
+        }
+        totalCount = sequenceTasks.length;
+        if (remainingCount === null || remainingCount > totalCount) {
+          remainingCount = totalCount;
+        }
+        currentIndex = totalCount - remainingCount + 1;
+        const index = Math.min(Math.max(currentIndex - 1, 0), sequenceTasks.length - 1);
+        currentTask = sequenceTasks[index];
+      } else if (sequence) {
         if (!sequenceTasks) {
           const listParams = new URLSearchParams(params.toString());
           listParams.delete("count");
@@ -497,15 +859,16 @@
             return;
           }
           sequenceTasks = await listRes.json();
-          if (!totalCount) {
-            totalCount = sequenceTasks.length;
-            remainingCount = totalCount;
-          }
         }
-        const index = currentIndex ? currentIndex - 1 : 0;
+        totalCount = sequenceTasks.length;
+        if (remainingCount === null || remainingCount > totalCount) {
+          remainingCount = totalCount;
+        }
+        currentIndex = totalCount - remainingCount + 1;
+        const index = Math.min(Math.max(currentIndex - 1, 0), sequenceTasks.length - 1);
         currentTask = sequenceTasks[index];
       } else {
-      const url = params.toString() ? "/api/task?" + params.toString() : "/api/task";
+        const url = params.toString() ? "/api/task?" + params.toString() : "/api/task";
         const res = await fetch(url);
         if (!res.ok) {
           document.getElementById("question").innerText = "Нет задач под выбранные фильтры.";
@@ -566,6 +929,7 @@
       document.getElementById("answer").value = "";
       hasTriedAnswer = false;
       document.getElementById("solutionButton").classList.add("hidden");
+      updatePartUI(currentTask);
 
       if (remainingCount !== null) {
         remainingCount -= 1;
@@ -594,6 +958,13 @@
       resultEl.innerText = data.correct ? "✅ Верно" : "❌ Неверно";
       resultEl.classList.toggle("ok", data.correct);
       resultEl.classList.toggle("bad", !data.correct);
+      if (data.correct) {
+        if (isErrorsMode()) {
+          removeMistakeTask(currentTask.id);
+        }
+      } else {
+        addMistakeTask(currentTask);
+      }
     }
 
     function renderChain(total, current) {
@@ -639,7 +1010,7 @@
     }
 
     async function showSolution() {
-      if (!hasTriedAnswer) return;
+      if (!hasTriedAnswer && !isSecondPartTask(currentTask)) return;
       const res = await fetch("/api/solution", {
         method: "POST",
         headers: {"Content-Type": "application/json"},
@@ -677,6 +1048,19 @@
       alert("Ссылка скопирована");
     });
 
+    async function loadAuthStatus() {
+      const link = document.getElementById("authLink");
+      const res = await fetch("/api/me");
+      if (!res.ok) {
+        link.href = "/login.html";
+        link.setAttribute("aria-label", "Войти");
+        return;
+      }
+      link.href = "/cabinet.html";
+      link.setAttribute("aria-label", "Личный кабинет");
+    }
+
+
     function recordAttempt() {
       if (!currentTask || !currentTask.subject) return;
       const key = "taskAttempts";
@@ -687,6 +1071,70 @@
       const existing = JSON.parse(localStorage.getItem(key) || "[]");
       existing.push(payload);
       localStorage.setItem(key, JSON.stringify(existing));
+    }
+
+    const mistakeStorageKey = "mistakeTasks";
+
+    function readMistakeTasks() {
+      try {
+        const stored = JSON.parse(localStorage.getItem(mistakeStorageKey) || "[]");
+        return Array.isArray(stored) ? stored : [];
+      } catch (error) {
+        return [];
+      }
+    }
+
+    function writeMistakeTasks(tasks) {
+      localStorage.setItem(mistakeStorageKey, JSON.stringify(tasks));
+    }
+
+    function addMistakeTask(task) {
+      if (!task || !Number.isFinite(task.id)) return;
+      const existing = readMistakeTasks();
+      if (existing.some((item) => item.id === task.id)) return;
+      existing.push({
+        id: task.id,
+        question: task.question || "",
+        imageUrl: task.imageUrl || "",
+        subject: task.subject || "",
+        examTaskNumber: Number.isFinite(task.examTaskNumber) ? task.examTaskNumber : null,
+        subtopic: task.subtopic || "",
+        examType: task.examType || ""
+      });
+      writeMistakeTasks(existing);
+    }
+
+    function removeMistakeTask(taskId) {
+      const existing = readMistakeTasks();
+      const filtered = existing.filter((item) => item.id !== taskId);
+      writeMistakeTasks(filtered);
+    }
+
+    function isErrorsMode() {
+      const params = new URLSearchParams(window.location.search);
+      return params.get("mode") === "errors";
+    }
+
+    function filterMistakeTasks(items, params) {
+      const examType = params.get("examType");
+      const subject = params.get("subject");
+      const subtopic = params.get("subtopic");
+      const rawExamTaskNumber = params.get("examTaskNumber");
+      const examTaskNumber = rawExamTaskNumber ? Number(rawExamTaskNumber) : null;
+      return items.filter((task) => {
+        if (examType && task.examType !== examType) return false;
+        if (subject && task.subject !== subject) return false;
+        if (subtopic && task.subtopic !== subtopic) return false;
+        if (Number.isFinite(examTaskNumber) && task.examTaskNumber !== examTaskNumber) return false;
+        return true;
+      });
+    }
+
+    function showErrorsEmptyState() {
+      document.getElementById("question").innerText = "Нет заданий для работы с ошибками.";
+      document.getElementById("meta").innerText = "";
+      document.getElementById("planInfo").innerText = "";
+      document.getElementById("chain").innerHTML = "";
     }
 
     function setMathText(element, text) {
@@ -733,6 +1181,190 @@
       if (event.key === "Enter") check();
     });
 
+    function isSecondPartTask(task) {
+      if (!task) return false;
+      const subject = String(task.subject || "").toLowerCase();
+      const number = Number(task.examTaskNumber || 0);
+      return subject === "математика профиль" && number >= 13;
+    }
+
+    function maxScoreForTask(task) {
+      const number = Number(task?.examTaskNumber || 0);
+      if (number >= 13 && number <= 15) return 2;
+      if (number >= 16 && number <= 19) return 3;
+      return 0;
+    }
+
+    function updatePartUI(task) {
+      if (answerControls) {
+        answerControls.classList.remove("hidden");
+      }
+      if (answerRow) {
+        answerRow.classList.remove("hidden");
+      }
+      if (answerButton) {
+        answerButton.classList.remove("hidden");
+      }
+      if (secondPartBlock) {
+        secondPartBlock.classList.add("hidden");
+      }
+
+      if (isSecondPartTask(task)) {
+        if (answerControls) answerControls.classList.add("hidden");
+        if (answerRow) answerRow.classList.add("hidden");
+        if (secondPartBlock) secondPartBlock.classList.remove("hidden");
+        if (secondPartScoreBlock) secondPartScoreBlock.classList.remove("hidden");
+        if (taskCard) taskCard.classList.add("second-part-active");
+      }
+
+      if (isSecondPartTask(task) && secondPartBlock) {
+        if (solutionPreview) {
+          solutionPreview.classList.add("hidden");
+          solutionPreview.removeAttribute("src");
+        }
+        if (solutionImageInput) {
+          solutionImageInput.value = "";
+        }
+        if (secondFeedback) {
+          secondFeedback.classList.add("hidden");
+          secondFeedback.textContent = "";
+        }
+        if (secondFeedbackBlocks) {
+          secondFeedbackBlocks.classList.add("hidden");
+          secondFeedbackBlocks.innerHTML = "";
+        }
+        if (manualScoreInput) {
+          const maxScore = maxScoreForTask(task);
+          manualScoreInput.max = String(maxScore);
+          const scoreLabel = document.getElementById("secondScoreLabel");
+          if (scoreLabel) {
+            scoreLabel.textContent = "Баллы (0–" + maxScore + ")";
+          }
+          const scores = JSON.parse(localStorage.getItem("manualScores") || "{}");
+          const saved = scores[String(task.id)];
+          manualScoreInput.value = Number.isFinite(saved) ? String(saved) : "";
+        }
+        if (scoreStatus) scoreStatus.textContent = "";
+      }
+      if (!isSecondPartTask(task) && secondPartScoreBlock) {
+        secondPartScoreBlock.classList.add("hidden");
+      }
+      if (!isSecondPartTask(task) && taskCard) {
+        taskCard.classList.remove("second-part-active");
+      }
+
+    }
+
+    if (solutionImageInput && solutionPreview) {
+      solutionImageInput.addEventListener("change", () => {
+        const file = solutionImageInput.files && solutionImageInput.files[0];
+        if (solutionFileName) {
+          solutionFileName.textContent = file ? file.name : "Файл не выбран";
+        }
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = () => {
+          solutionPreview.src = String(reader.result || "");
+          solutionPreview.classList.remove("hidden");
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    if (checkSecondButton && scoreStatus && manualScoreInput) {
+      checkSecondButton.addEventListener("click", () => {
+        const file = solutionImageInput && solutionImageInput.files
+          ? solutionImageInput.files[0]
+          : null;
+        if (!file) {
+          scoreStatus.textContent = "Сначала прикрепите фото решения.";
+          return;
+        }
+        const maxScore = maxScoreForTask(currentTask);
+        let dots = 0;
+        const baseText = "Проверяем";
+        scoreStatus.textContent = baseText;
+        checkSecondButton.disabled = true;
+        const delay = 800 + Math.floor(Math.random() * 700);
+        const intervalId = setInterval(() => {
+          dots = (dots + 1) % 4;
+          scoreStatus.textContent = baseText + ".".repeat(dots);
+        }, 300);
+        setTimeout(() => {
+          clearInterval(intervalId);
+          const score = Math.floor(Math.random() * (maxScore + 1));
+          manualScoreInput.value = String(score);
+          const scores = JSON.parse(localStorage.getItem("manualScores") || "{}");
+          scores[String(currentTask?.id || "")] = score;
+          localStorage.setItem("manualScores", JSON.stringify(scores));
+          scoreStatus.textContent = "Готово: " + score + " балл(ов)";
+          const feedbackText =
+            "AI-агент разобрал решение: выделил корректные шаги и указал, где допущены ошибки.";
+          const blockTexts = [
+            "Шаг 1: первый балл ты забрал и абсолютно прав.",
+            "Шаг 2: во втором шаге ты совершил ошибку — тут и тут нужно сделать так и так.",
+            "Шаг 3: ты пришел к неверному выводу — проверь логику перехода и пересчитай итог.",
+            "Итог: часть решения верна, но есть ошибки в середине и финале.",
+          ];
+          if (secondFeedback) {
+            secondFeedback.textContent = feedbackText;
+            secondFeedback.classList.remove("hidden");
+          } else {
+            scoreStatus.textContent = scoreStatus.textContent + " · " + feedbackText;
+          }
+          if (secondFeedbackBlocks) {
+            secondFeedbackBlocks.innerHTML = "";
+            blockTexts.forEach((text) => {
+              const item = document.createElement("li");
+              item.textContent = text;
+              secondFeedbackBlocks.appendChild(item);
+            });
+            secondFeedbackBlocks.classList.remove("hidden");
+          }
+          checkSecondButton.disabled = false;
+        }, delay);
+      });
+    }
+
+    if (secondSolutionButton) {
+      secondSolutionButton.addEventListener("click", () => {
+        showSolution();
+      });
+    }
+
+    if (clearImageButton && solutionPreview && solutionImageInput) {
+      clearImageButton.addEventListener("click", () => {
+        solutionImageInput.value = "";
+        if (solutionFileName) solutionFileName.textContent = "Файл не выбран";
+        solutionPreview.classList.add("hidden");
+        solutionPreview.removeAttribute("src");
+        if (secondFeedback) {
+          secondFeedback.classList.add("hidden");
+          secondFeedback.textContent = "";
+        }
+        if (secondFeedbackBlocks) {
+          secondFeedbackBlocks.classList.add("hidden");
+          secondFeedbackBlocks.innerHTML = "";
+        }
+      });
+    }
+
+    if (saveScoreButton && manualScoreInput && scoreStatus) {
+      saveScoreButton.addEventListener("click", () => {
+        const value = Number(manualScoreInput.value);
+        const maxScore = maxScoreForTask(currentTask);
+        if (!Number.isFinite(value) || value < 0 || value > maxScore) {
+          scoreStatus.textContent = "Введите баллы от 0 до " + maxScore + ".";
+          return;
+        }
+        const scores = JSON.parse(localStorage.getItem("manualScores") || "{}");
+        scores[String(currentTask?.id || "")] = value;
+        localStorage.setItem("manualScores", JSON.stringify(scores));
+        scoreStatus.textContent = "Сохранено";
+      });
+    }
+
+
     const resetLink = document.getElementById("resetLink");
     const resetModal = document.getElementById("resetModal");
     const resetCancel = document.getElementById("resetCancel");
@@ -760,7 +1392,34 @@
     }
 
     trackEvent("page_view");
+    loadAuthStatus();
     load();
+
+    if (aiPromptButtons && aiTutorInput) {
+      aiPromptButtons.forEach((button) => {
+        button.addEventListener("click", () => {
+          const prompt = button.getAttribute("data-ai-prompt") || "";
+          aiTutorInput.value = prompt;
+          aiTutorInput.focus();
+        });
+      });
+    }
+
+    function sendTutorMessage() {
+      if (!aiTutorInput) return;
+      const text = aiTutorInput.value.trim();
+      if (!text) return;
+      aiTutorInput.value = "";
+    }
+
+    if (aiTutorSend) {
+      aiTutorSend.addEventListener("click", sendTutorMessage);
+    }
+    if (aiTutorInput) {
+      aiTutorInput.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") sendTutorMessage();
+      });
+    }
   </script>
 </body>
 </html>

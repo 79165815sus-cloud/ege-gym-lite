@@ -201,8 +201,9 @@
         <h1>Админка заданий</h1>
         <div class="links">
           <a class="link" href="/admin-analytics.html">Аналитика</a>
+          <a class="link" href="/cabinet.html">Кабинет</a>
           <a class="link" href="/filters.html">План</a>
-          <a class="link" href="/">Качалка</a>
+          <a class="link" href="/filters.html">Качалка</a>
         </div>
       </div>
 
@@ -273,6 +274,15 @@
       setStatus("Загрузка...");
       await loadSubjects();
       const res = await fetch("/api/tasks");
+      if (res.status === 401) {
+        window.location.href = "/login.html?from=" + encodeURIComponent(window.location.pathname);
+        return;
+      }
+      if (res.status === 403) {
+        alert("Доступ только для администратора.");
+        window.location.href = "/cabinet.html";
+        return;
+      }
       if (!res.ok) {
         setStatus("Ошибка загрузки");
         return;

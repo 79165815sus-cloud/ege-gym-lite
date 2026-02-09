@@ -52,8 +52,22 @@
       position: relative;
     }
 
+    .header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 6px;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
     h1 {
-      margin: 0 0 6px;
+      margin: 0;
       font-size: 24px;
       letter-spacing: -0.01em;
     }
@@ -162,6 +176,47 @@
       font-size: 13px;
     }
 
+    .segment-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .segment-option {
+      position: relative;
+      flex: 0 0 auto;
+    }
+
+    .segment-option input {
+      position: absolute;
+      opacity: 0;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      cursor: pointer;
+    }
+
+    .segment-option span {
+      display: block;
+      text-align: center;
+      padding: 10px 12px;
+      border-radius: 10px;
+      font-size: 13px;
+      color: var(--accent);
+      background: #fff;
+      border: 1px solid #e9d5ff;
+      box-shadow: 0 6px 12px rgba(124, 58, 237, 0.08);
+      transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    }
+
+    .segment-option input:checked + span {
+      background: #7c3aed;
+      color: #fff;
+      border-color: #7c3aed;
+      box-shadow: 0 10px 18px rgba(124, 58, 237, 0.28);
+    }
+
     select {
       width: 100%;
       padding: 10px 12px;
@@ -173,6 +228,7 @@
 
     .row {
       display: flex;
+      align-items: center;
       gap: 10px;
       flex-wrap: wrap;
       margin-top: 16px;
@@ -202,6 +258,75 @@
     }
     .btn-ghost:hover { background: #f5f3ff; }
 
+    .auth-link {
+      font-size: 12px;
+      color: var(--accent);
+      text-decoration: none;
+      padding: 6px 10px;
+      border: 1px solid #e9d5ff;
+      border-radius: 10px;
+      background: #f5f3ff;
+      transition: background 0.15s ease, border-color 0.15s ease;
+      white-space: nowrap;
+    }
+
+    .auth-link:hover {
+      background: #ede9fe;
+      border-color: #ddd6fe;
+    }
+
+    .services-menu {
+      position: relative;
+    }
+
+    .services-button {
+      width: 32px;
+      height: 32px;
+      border-radius: 10px;
+      border: 1px solid #e9d5ff;
+      background: #f5f3ff;
+      color: var(--accent);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+
+    .services-list {
+      position: absolute;
+      top: 40px;
+      right: 0;
+      min-width: 160px;
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      box-shadow: var(--shadow);
+      padding: 6px;
+      display: none;
+      gap: 4px;
+      z-index: 30;
+    }
+
+    .services-menu:hover .services-list,
+    .services-menu:focus-within .services-list {
+      display: grid;
+    }
+
+    .services-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      border-radius: 8px;
+      color: var(--accent);
+      text-decoration: none;
+      font-size: 14px;
+    }
+
+    .services-item:hover {
+      background: #f5f3ff;
+    }
+
     .hidden {
       display: none !important;
     }
@@ -211,7 +336,31 @@
 <body>
   <div class="page">
     <div class="card">
-      <h1>План на тренировку</h1>
+      <div class="header">
+        <h1>План на тренировку</h1>
+        <div class="header-actions">
+          <div class="services-menu">
+            <button class="services-button" type="button" aria-label="Сервисы">
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <rect x="4" y="4" width="6" height="6" rx="2" fill="currentColor"></rect>
+                <rect x="14" y="4" width="6" height="6" rx="2" fill="currentColor"></rect>
+                <rect x="4" y="14" width="6" height="6" rx="2" fill="currentColor"></rect>
+                <rect x="14" y="14" width="6" height="6" rx="2" fill="currentColor"></rect>
+              </svg>
+            </button>
+            <div class="services-list">
+              <a class="services-item" href="https://100points.ru/wiki/" target="_blank" rel="noopener noreferrer">📘 Учебник</a>
+              <a class="services-item" href="https://100points.ru/wiki/tips-and-tricks/" target="_blank" rel="noopener noreferrer">▶️ Медиа</a>
+              <a class="services-item" href="/home.html">🏠 Главная</a>
+              <a class="services-item" href="/filters.html">🏋️ Качалка</a>
+              <a class="services-item" href="/navigator.html">🧭 Навигатор поступления</a>
+              <a class="services-item" href="/proorientation.html">🎯 Профориентация</a>
+              <a class="services-item" href="https://100points.ru/courses/" target="_blank" rel="noopener noreferrer">🛍️ Магазин</a>
+            </div>
+          </div>
+          <a id="authLink" class="auth-link" href="/login.html">Войти</a>
+        </div>
+      </div>
       <p class="subtitle">Выберите параметры, чтобы собрать подходящие задания</p>
 
       <div class="field">
@@ -228,15 +377,20 @@
       </div>
 
       <div class="field">
-        <div class="exam-toggle">
-          <div class="switch" role="switch" aria-label="Отдельные варианты или пробники">
-            <input type="checkbox" id="modeSwitch" aria-label="Отдельные варианты или пробники">
-            <div class="switch-visual"></div>
-          </div>
-          <div class="mode-labels">
-            <strong id="modeText">Отдельные задания</strong>
-            <span>переключить на Пробники</span>
-          </div>
+        <label>Режим тренировки</label>
+        <div class="segment-group" role="radiogroup" aria-label="Режим тренировки">
+          <label class="segment-option">
+            <input type="radio" name="modeOption" value="single" checked>
+            <span>Отдельные задания</span>
+          </label>
+          <label class="segment-option">
+            <input type="radio" name="modeOption" value="probe">
+            <span>Пробник</span>
+          </label>
+          <label class="segment-option">
+            <input type="radio" name="modeOption" value="errors">
+            <span>Работа с ошибками</span>
+          </label>
         </div>
       </div>
 
@@ -363,7 +517,7 @@
     function applyFilters() {
       const params = new URLSearchParams();
       const examSwitch = document.getElementById("examSwitch");
-      const modeSwitch = document.getElementById("modeSwitch");
+      const modeValue = getModeValue();
       const examType = examSwitch.checked ? "ЕГЭ" : "ОГЭ";
       const subject = document.getElementById("subject").value;
       const examTaskNumber = document.getElementById("examTaskNumber").value;
@@ -373,13 +527,16 @@
 
       if (examType) params.set("examType", examType);
       if (subject) params.set("subject", subject);
-      if (modeSwitch.checked) {
+      if (modeValue === "probe") {
         params.set("sequence", "1");
         const variantCount = getVariantCountBySubject(subject);
         if (variantCount) params.set("count", variantCount);
         if (variantNumber) params.set("variant", variantNumber);
+      } else if (modeValue === "errors") {
+        params.set("mode", "errors");
+        if (examTaskNumber) params.set("examTaskNumber", examTaskNumber);
       } else {
-      if (examTaskNumber) params.set("examTaskNumber", examTaskNumber);
+        if (examTaskNumber) params.set("examTaskNumber", examTaskNumber);
         if (taskCount) params.set("count", taskCount);
       }
 
@@ -393,6 +550,8 @@
       document.getElementById("subject").value = "";
       document.getElementById("examTaskNumber").value = "";
       document.getElementById("taskCount").value = "";
+      document.querySelector("input[name=\"modeOption\"][value=\"single\"]").checked = true;
+      updateModeVisibility();
     }
 
     function updateExamTypeText() {
@@ -408,17 +567,9 @@
       }
     }
 
-    function updateModeText() {
-      const modeSwitch = document.getElementById("modeSwitch");
-      const label = document.getElementById("modeText");
-      const hint = label.nextElementSibling;
-      if (modeSwitch.checked) {
-        label.innerText = "Пробники";
-        if (hint) hint.innerText = "переключить на Отдельные задания";
-      } else {
-        label.innerText = "Отдельные задания";
-        if (hint) hint.innerText = "переключить на Пробники";
-      }
+    function getModeValue() {
+      const selected = document.querySelector("input[name=\"modeOption\"]:checked");
+      return selected ? selected.value : "single";
     }
 
     function handleExamTaskChange() {
@@ -428,13 +579,17 @@
     }
 
     function updateModeVisibility() {
-      const modeSwitch = document.getElementById("modeSwitch");
+      const modeValue = getModeValue();
       const examField = document.getElementById("examTaskNumber").closest(".field");
       const variantField = document.getElementById("variantField");
       const taskCountField = document.getElementById("taskCountField");
-      if (modeSwitch.checked) {
+      if (modeValue === "probe") {
         examField.classList.add("hidden");
         variantField.classList.remove("hidden");
+        taskCountField.classList.add("hidden");
+      } else if (modeValue === "errors") {
+        examField.classList.remove("hidden");
+        variantField.classList.add("hidden");
         taskCountField.classList.add("hidden");
       } else {
         examField.classList.remove("hidden");
@@ -443,16 +598,27 @@
       }
     }
 
+
     document.getElementById("subject").addEventListener("change", updateExamTaskOptions);
     document.getElementById("examTaskNumber").addEventListener("change", handleExamTaskChange);
     document.getElementById("examSwitch").addEventListener("change", updateExamTypeText);
-    document.getElementById("modeSwitch").addEventListener("change", () => {
-      updateModeText();
-      updateModeVisibility();
+    document.querySelectorAll("input[name=\"modeOption\"]").forEach((input) => {
+      input.addEventListener("change", updateModeVisibility);
     });
+    async function loadAuthStatus() {
+      const link = document.getElementById("authLink");
+      const res = await fetch("/api/me");
+      if (!res.ok) {
+        link.textContent = "Войти";
+        link.href = "/login.html";
+        return;
+      }
+      link.textContent = "Личный кабинет";
+      link.href = "/cabinet.html";
+    }
     updateExamTypeText();
-    updateModeText();
     updateModeVisibility();
+    loadAuthStatus();
     loadFilters();
   </script>
 </body>
