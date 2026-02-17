@@ -128,6 +128,26 @@
       font-weight: 600;
     }
 
+    .table-wrap {
+      max-height: 70vh;
+      overflow: auto;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: #fff;
+    }
+
+    thead th {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+    }
+
+    thead tr:nth-child(2) th {
+      top: 29px;
+      z-index: 3;
+      background: #f3f4f6;
+    }
+
     input, textarea {
       width: 100%;
       border: 1px solid var(--border);
@@ -290,7 +310,22 @@
       const res = await fetch("/api/filters");
       if (!res.ok) return;
       const data = await res.json();
-      subjectOptions = Array.isArray(data.subjects) ? data.subjects : [];
+      const baseSubjects = [
+        "Математика профиль",
+        "Математика база",
+        "Русский язык",
+        "Физика",
+        "Информатика",
+        "География",
+        "Английский язык",
+        "Литература",
+        "Обществознание",
+        "История",
+        "Химия",
+        "Биология"
+      ];
+      const fromApi = Array.isArray(data.subjects) ? data.subjects : [];
+      subjectOptions = Array.from(new Set([...baseSubjects, ...fromApi]));
     }
 
     function renderTable() {

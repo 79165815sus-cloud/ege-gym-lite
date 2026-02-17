@@ -297,7 +297,20 @@
       if (!res.ok) return;
       filtersData = await res.json();
 
-      fillSelect("subject", ["Математика профиль", "Русский язык", "Химия", "Биология"]);
+      fillSelect("subject", [
+        "Математика профиль",
+        "Математика база",
+        "Русский язык",
+        "Физика",
+        "Информатика",
+        "География",
+        "Английский язык",
+        "Литература",
+        "Обществознание",
+        "История",
+        "Химия",
+        "Биология"
+      ]);
       const subjectSelect = document.getElementById("subject");
       subjectSelect.value = "Математика профиль";
       updateExamTaskOptions();
