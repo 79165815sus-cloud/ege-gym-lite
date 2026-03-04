@@ -153,7 +153,13 @@
         <button class="btn btn-ghost" onclick="load()">Следующая</button>
       </div>
 
+      <div class="row">
+        <button class="btn" onclick="startHints()">Подсказка</button>
+        <button class="btn hidden" id="hintNext" type="button">Дальше</button>
+      </div>
+
       <p id="result" class="result"></p>
+      <p id="hintText" class="result hidden" style="font-weight: 500; color: #4c1d95;"></p>
     </div>
   </div>
 
@@ -166,6 +172,8 @@
   <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
   <script>
     let currentTask;
+    let hintSteps = null;
+    let hintStepIndex = 0;
     const anonId = getAnonId();
 
     async function load() {
@@ -193,6 +201,11 @@
         questionImage.removeAttribute("src");
       }
       setMathText(document.getElementById("result"), "");
+      setMathText(document.getElementById("hintText"), "");
+      document.getElementById("hintText").classList.add("hidden");
+      document.getElementById("hintNext").classList.add("hidden");
+      hintSteps = null;
+      hintStepIndex = 0;
       document.getElementById("answer").value = "";
     }
 
@@ -210,6 +223,83 @@
       resultEl.classList.toggle("ok", data.correct);
       resultEl.classList.toggle("bad", !data.correct);
     }
+
+    function formatHintStep(step) {
+      if (!step) return "Нет данных.";
+      const hint = step.hint ? step.hint.trim() : "";
+      return hint || "Нет данных.";
+    }
+
+    function formatHintStepsUpTo(indexInclusive) {
+      if (!Array.isArray(hintSteps) || hintSteps.length === 0) return "Нет данных.";
+      const maxIndex = Math.min(Math.max(indexInclusive, 0), hintSteps.length - 1);
+      const parts = [];
+      for (let i = 0; i <= maxIndex; i += 1) {
+        const step = hintSteps[i];
+        const text = formatHintStep(step);
+        const stepNo = (step && Number.isFinite(Number(step.step))) ? Number(step.step) : (i + 1);
+        parts.push(`Шаг ${stepNo}\n${text}`);
+      }
+      return parts.join("\n\n");
+    }
+
+    function renderHintStep() {
+      const hintEl = document.getElementById("hintText");
+      const nextBtn = document.getElementById("hintNext");
+      if (!Array.isArray(hintSteps) || hintSteps.length === 0) {
+        setMathText(hintEl, "Подсказка: нет данных.");
+        hintEl.classList.remove("hidden");
+        nextBtn.classList.add("hidden");
+        return;
+      }
+      if (hintStepIndex < 0) hintStepIndex = 0;
+      if (hintStepIndex >= hintSteps.length) hintStepIndex = hintSteps.length - 1;
+      setMathText(hintEl, formatHintStepsUpTo(hintStepIndex));
+      hintEl.classList.remove("hidden");
+      nextBtn.classList.remove("hidden");
+      const isLast = hintStepIndex >= hintSteps.length - 1;
+      nextBtn.textContent = isLast ? "Скрыть" : "Дальше";
+      const step = hintSteps[hintStepIndex];
+      trackEvent("show_hint_step", { task_id: currentTask.id, step: step && step.step ? step.step : (hintStepIndex + 1) });
+    }
+
+    async function startHints() {
+      if (!currentTask || !currentTask.id) return;
+      if (Array.isArray(hintSteps) && hintSteps.length > 0) {
+        renderHintStep();
+        return;
+      }
+
+      const res = await fetch("/api/hints", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ id: currentTask.id, steps: [1,2,3,4] })
+      });
+      const hintEl = document.getElementById("hintText");
+      const nextBtn = document.getElementById("hintNext");
+      if (!res.ok) {
+        setMathText(hintEl, "Подсказка: нет данных.");
+        hintEl.classList.remove("hidden");
+        nextBtn.classList.add("hidden");
+        return;
+      }
+      const data = await res.json();
+      hintSteps = (data && Array.isArray(data.steps)) ? data.steps : [];
+      hintStepIndex = 0;
+      renderHintStep();
+    }
+
+    document.getElementById("hintNext").addEventListener("click", () => {
+      if (!Array.isArray(hintSteps) || hintSteps.length === 0) return;
+      const isLast = hintStepIndex >= hintSteps.length - 1;
+      if (isLast) {
+        document.getElementById("hintText").classList.add("hidden");
+        document.getElementById("hintNext").classList.add("hidden");
+        return;
+      }
+      hintStepIndex += 1;
+      renderHintStep();
+    });
 
     function setMathText(element, text) {
       element.textContent = text || "";

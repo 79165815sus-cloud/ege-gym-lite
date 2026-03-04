@@ -230,6 +230,7 @@
         <button class="btn btn-primary" onclick="saveTasks()">Сохранить</button>
         <button class="btn" onclick="addTask()">Добавить</button>
         <button class="btn" onclick="document.getElementById('importFile').click()">Импорт</button>
+        <button class="btn" onclick="startBackfillHintSteps()">Сгенерировать шаги (AI)</button>
         <button class="btn" onclick="loadTasks()">Обновить</button>
         <span id="status" class="status"></span>
       </div>
@@ -250,6 +251,7 @@
               <th>ЕГЭ/ОГЭ</th>
               <th>Ответ</th>
               <th>Решение</th>
+              <th>Шаги</th>
               <th></th>
             </tr>
             <tr>
@@ -264,6 +266,7 @@
               <th><input id="filterExamType" placeholder="Фильтр"></th>
               <th><input id="filterAnswer" placeholder="Фильтр"></th>
               <th><input id="filterSolution" placeholder="Фильтр"></th>
+              <th><input id="filterHintSteps" placeholder="Фильтр"></th>
               <th></th>
             </tr>
           </thead>
@@ -291,6 +294,87 @@
 
     function setStatus(text) {
       document.getElementById("status").innerText = text || "";
+    }
+
+    function getAdminToken() {
+      const key = "adminToken";
+      let value = localStorage.getItem(key) || "";
+      value = String(value).trim();
+      if (!value) {
+        value = prompt("Введите ADMIN_TOKEN для запуска генерации шагов (AI):") || "";
+        value = String(value).trim();
+        if (value) localStorage.setItem(key, value);
+      }
+      return value;
+    }
+
+    async function startBackfillHintSteps() {
+      const token = getAdminToken();
+      if (!token) {
+        setStatus("Нужен ADMIN_TOKEN");
+        return;
+      }
+      setStatus("Запуск генерации...");
+      const res = await fetch("/api/admin/backfill-hintsteps", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Admin-Token": token
+        },
+        body: JSON.stringify({
+          subject: "Математика профиль",
+          onlyMissing: true,
+          overwrite: false,
+          maxTasks: 50
+        })
+      });
+      if (!res.ok) {
+        const text = await res.text();
+        setStatus("Ошибка: " + text);
+        return;
+      }
+      const data = await res.json();
+      const jobId = data && data.jobId ? String(data.jobId) : "";
+      if (!jobId) {
+        setStatus("Не удалось получить jobId");
+        return;
+      }
+      pollBackfillJob(jobId);
+    }
+
+    async function pollBackfillJob(jobId) {
+      const token = getAdminToken();
+      if (!token) return;
+      const url = "/api/admin/backfill-hintsteps?id=" + encodeURIComponent(jobId);
+
+      const tick = async () => {
+        try {
+          const res = await fetch(url, { headers: { "X-Admin-Token": token } });
+          if (!res.ok) {
+            const text = await res.text();
+            setStatus("Ошибка статуса: " + text);
+            return;
+          }
+          const job = await res.json();
+          const status = job && job.status ? job.status : "unknown";
+          const updated = job && typeof job.updated === "number" ? job.updated : 0;
+          const skipped = job && typeof job.skipped === "number" ? job.skipped : 0;
+          const failed = job && typeof job.failed === "number" ? job.failed : 0;
+          const total = job && typeof job.total === "number" ? job.total : 0;
+          const suffix = job && job.lastError ? (" · " + job.lastError) : "";
+          setStatus(`AI шаги: ${status} · обновлено ${updated} · пропущено ${skipped} · ошибок ${failed} · просмотрено ${total}${suffix}`);
+
+          if (status === "done" || status === "failed") {
+            await loadTasks();
+            return;
+          }
+          setTimeout(tick, 1500);
+        } catch (error) {
+          setStatus("Ошибка статуса: " + String(error));
+        }
+      };
+
+      tick();
     }
 
     async function loadTasks() {
@@ -334,6 +418,7 @@
       const filtered = applyFilters(tasks);
       filtered.forEach((task) => {
         const row = document.createElement("tr");
+        const stepsText = formatHintSteps(task.hintSteps);
         row.innerHTML = `
           <td><input data-field="id" data-id="${task.id}" type="number" value="${task.id ?? ""}"></td>
           <td><textarea data-field="question" data-id="${task.id}">${task.question ?? ""}</textarea></td>
@@ -362,6 +447,7 @@
           <td><input data-field="examType" data-id="${task.id}" value="${task.examType ?? ""}"></td>
           <td><input data-field="answer" data-id="${task.id}" value="${task.answer ?? ""}"></td>
           <td><textarea data-field="solution" data-id="${task.id}">${task.solution ?? ""}</textarea></td>
+          <td><textarea data-field="hintStepsText" data-id="${task.id}" placeholder="Каждый шаг отделяй строкой ---">${stepsText}</textarea></td>
           <td class="row-actions"><button class="btn" onclick="removeTask(${task.id})">Удалить</button></td>
         `;
         body.appendChild(row);
@@ -387,7 +473,8 @@
         subtopic: document.getElementById("filterSubtopic").value.trim().toLowerCase(),
         examType: document.getElementById("filterExamType").value.trim().toLowerCase(),
         answer: document.getElementById("filterAnswer").value.trim().toLowerCase(),
-        solution: document.getElementById("filterSolution").value.trim().toLowerCase()
+        solution: document.getElementById("filterSolution").value.trim().toLowerCase(),
+        hintSteps: document.getElementById("filterHintSteps").value.trim().toLowerCase()
       };
 
       return items.filter((task) => {
@@ -402,6 +489,10 @@
         if (filters.examType && !String(task.examType ?? "").toLowerCase().includes(filters.examType)) return false;
         if (filters.answer && !String(task.answer ?? "").toLowerCase().includes(filters.answer)) return false;
         if (filters.solution && !String(task.solution ?? "").toLowerCase().includes(filters.solution)) return false;
+        if (filters.hintSteps) {
+          const joined = Array.isArray(task.hintSteps) ? task.hintSteps.join("\n---\n") : "";
+          if (!String(joined).toLowerCase().includes(filters.hintSteps)) return false;
+        }
         return true;
       });
     }
@@ -423,6 +514,21 @@
         .replaceAll(">", "&gt;")
         .replaceAll('"', "&quot;")
         .replaceAll("'", "&#39;");
+    }
+
+    function formatHintSteps(steps) {
+      if (!Array.isArray(steps) || steps.length === 0) return "";
+      return steps.map((item) => String(item ?? "").trim()).filter(Boolean).join("\n---\n");
+    }
+
+    function parseHintSteps(text) {
+      const raw = String(text || "").replace(/\r\n/g, "\n");
+      if (!raw.trim()) return [];
+      const parts = raw
+        .split(/\n\s*---\s*\n/g)
+        .map((p) => p.trim())
+        .filter(Boolean);
+      return parts;
     }
 
     function openEditor(event) {
@@ -463,7 +569,8 @@
           subtopic: get("subtopic").value.trim(),
           examType: get("examType").value.trim(),
           answer: get("answer").value.trim(),
-          solution: get("solution").value.trim()
+          solution: get("solution").value.trim(),
+          hintSteps: parseHintSteps(get("hintStepsText").value)
         };
       });
     }
