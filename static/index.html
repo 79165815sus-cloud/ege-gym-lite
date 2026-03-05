@@ -534,7 +534,7 @@
       <p id="result" class="result"></p>
       <p id="manualCheckNotice" class="hint hidden"></p>
       <p id="hintText" class="hint hidden"></p>
-      <div id="hintActions" class="row hidden" style="margin-bottom: 0;">
+      <div id="hintActions" class="row hidden" style="margin-bottom: 0; margin-top: 10px;">
         <button class="btn btn-soft" id="hintNext" type="button">Дальше</button>
       </div>
       <p id="answerText" class="hint hidden"></p>
@@ -927,9 +927,13 @@
       if (hintStepIndex >= hintSteps.length) hintStepIndex = hintSteps.length - 1;
       setMathText(hintEl, formatHintStepsUpTo(hintStepIndex), { normalize: true });
       hintEl.classList.remove("hidden");
-      actions.classList.remove("hidden");
       const isLast = hintStepIndex >= hintSteps.length - 1;
-      nextBtn.textContent = isLast ? "Скрыть" : "Дальше";
+      if (isLast) {
+        actions.classList.add("hidden");
+      } else {
+        actions.classList.remove("hidden");
+        nextBtn.textContent = "Дальше";
+      }
       const step = hintSteps[hintStepIndex];
       trackEvent("show_hint_step", { task_id: currentTask.id, step: step && step.step ? step.step : (hintStepIndex + 1) });
     }
@@ -960,12 +964,7 @@
 
     document.getElementById("hintNext").addEventListener("click", () => {
       if (!Array.isArray(hintSteps) || hintSteps.length === 0) return;
-      const isLast = hintStepIndex >= hintSteps.length - 1;
-      if (isLast) {
-        document.getElementById("hintText").classList.add("hidden");
-        document.getElementById("hintActions").classList.add("hidden");
-        return;
-      }
+      if (hintStepIndex >= hintSteps.length - 1) return;
       hintStepIndex += 1;
       renderHintStep();
     });

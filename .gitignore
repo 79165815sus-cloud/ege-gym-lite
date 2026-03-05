@@ -25,3 +25,7 @@ coverage.out
 # macOS
 .DS_Store
 
+# local data
+analytics.jsonl
+tasks.json.bak
+

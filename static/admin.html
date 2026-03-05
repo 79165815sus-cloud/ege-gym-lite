@@ -230,6 +230,19 @@
         <button class="btn btn-primary" onclick="saveTasks()">Сохранить</button>
         <button class="btn" onclick="addTask()">Добавить</button>
         <button class="btn" onclick="document.getElementById('importFile').click()">Импорт</button>
+        <select class="btn" id="backfillSubject" title="Предмет для генерации (пусто = все)"></select>
+        <label class="btn" style="display:flex; align-items:center; gap:6px;">
+          <input id="backfillOnlyMissing" type="checkbox" checked style="width:auto;">
+          onlyMissing
+        </label>
+        <label class="btn" style="display:flex; align-items:center; gap:6px;">
+          <input id="backfillOverwrite" type="checkbox" style="width:auto;">
+          overwrite
+        </label>
+        <label class="btn" style="display:flex; align-items:center; gap:6px;">
+          max
+          <input id="backfillMaxTasks" type="number" min="1" step="1" value="50" style="width:80px;">
+        </label>
         <button class="btn" onclick="startBackfillHintSteps()">Сгенерировать шаги (AI)</button>
         <button class="btn" onclick="loadTasks()">Обновить</button>
         <span id="status" class="status"></span>
@@ -308,12 +321,63 @@
       return value;
     }
 
+    function getBackfillSettings() {
+      const key = "backfillSettings";
+      const raw = localStorage.getItem(key) || "";
+      try {
+        const parsed = raw ? JSON.parse(raw) : null;
+        return parsed && typeof parsed === "object" ? parsed : {};
+      } catch {
+        return {};
+      }
+    }
+
+    function saveBackfillSettings(settings) {
+      const key = "backfillSettings";
+      localStorage.setItem(key, JSON.stringify(settings || {}));
+    }
+
+    function renderBackfillSubjectSelect() {
+      const select = document.getElementById("backfillSubject");
+      if (!select) return;
+
+      const stored = getBackfillSettings();
+      const current = typeof stored.subject === "string" ? stored.subject : "";
+
+      const options = [];
+      options.push(`<option value="">Все предметы</option>`);
+      subjectOptions.forEach((subject) => {
+        const selected = subject === current ? " selected" : "";
+        options.push(`<option value="${escapeHtml(subject)}"${selected}>${escapeHtml(subject)}</option>`);
+      });
+      select.innerHTML = options.join("");
+
+      // Restore other settings.
+      const onlyMissingEl = document.getElementById("backfillOnlyMissing");
+      const overwriteEl = document.getElementById("backfillOverwrite");
+      const maxEl = document.getElementById("backfillMaxTasks");
+      if (onlyMissingEl) onlyMissingEl.checked = stored.onlyMissing !== false;
+      if (overwriteEl) overwriteEl.checked = stored.overwrite === true;
+      if (maxEl && typeof stored.maxTasks === "number" && stored.maxTasks > 0) maxEl.value = String(stored.maxTasks);
+    }
+
     async function startBackfillHintSteps() {
       const token = getAdminToken();
       if (!token) {
         setStatus("Нужен ADMIN_TOKEN");
         return;
       }
+      const subjectEl = document.getElementById("backfillSubject");
+      const onlyMissingEl = document.getElementById("backfillOnlyMissing");
+      const overwriteEl = document.getElementById("backfillOverwrite");
+      const maxEl = document.getElementById("backfillMaxTasks");
+      const subject = subjectEl ? String(subjectEl.value || "").trim() : "";
+      const onlyMissing = !!(onlyMissingEl ? onlyMissingEl.checked : true);
+      const overwrite = !!(overwriteEl ? overwriteEl.checked : false);
+      const maxTasks = Math.max(1, Number(maxEl ? maxEl.value : 50) || 50);
+
+      saveBackfillSettings({ subject, onlyMissing, overwrite, maxTasks });
+
       setStatus("Запуск генерации...");
       const res = await fetch("/api/admin/backfill-hintsteps", {
         method: "POST",
@@ -322,10 +386,10 @@
           "X-Admin-Token": token
         },
         body: JSON.stringify({
-          subject: "Математика профиль",
-          onlyMissing: true,
-          overwrite: false,
-          maxTasks: 50
+          subject,
+          onlyMissing,
+          overwrite,
+          maxTasks
         })
       });
       if (!res.ok) {
@@ -410,6 +474,7 @@
       ];
       const fromApi = Array.isArray(data.subjects) ? data.subjects : [];
       subjectOptions = Array.from(new Set([...baseSubjects, ...fromApi]));
+      renderBackfillSubjectSelect();
     }
 
     function renderTable() {
@@ -536,7 +601,9 @@
       activeEditorField = event.target;
       const field = activeEditorField.getAttribute("data-field");
       document.getElementById("editorTitle").innerText =
-        field === "question" ? "Редактирование вопроса" : "Редактирование решения";
+        field === "question" ? "Редактирование вопроса" :
+        field === "hintStepsText" ? "Редактирование шагов" :
+        "Редактирование решения";
       document.getElementById("editorTextarea").value = activeEditorField.value;
       document.getElementById("editorBackdrop").classList.remove("hidden");
     }
@@ -659,6 +726,7 @@
       const rawExamTask = item.examTaskNumber ?? item.number ?? "";
       const rawVariant = item.variant ?? item.variantNumber ?? "";
       const rawAnswer = item.answer;
+      const rawHintSteps = Array.isArray(item.hintSteps) ? item.hintSteps : [];
       return {
         id: Number(item.id ?? item.number ?? index + 1) || 0,
         question: String(item.question ?? "").trim(),
@@ -670,7 +738,8 @@
         subtopic: String(item.subtopic ?? defaults.subtopic ?? "").trim(),
         examType: String(item.examType ?? defaults.examType ?? "").trim(),
         answer: rawAnswer == null ? "" : String(rawAnswer).trim(),
-        solution: String(item.solution ?? "").trim()
+        solution: String(item.solution ?? "").trim(),
+        hintSteps: rawHintSteps.map((s) => String(s ?? "").trim()).filter(Boolean)
       };
     }
 

@@ -1214,8 +1214,10 @@ func main() {
 		if req.MaxTasks <= 0 {
 			req.MaxTasks = 50
 		}
-		if req.Subject == "" {
-			req.Subject = "Математика профиль"
+		// Empty or "*" subject means "all subjects".
+		subjectFilter := strings.TrimSpace(req.Subject)
+		if subjectFilter == "*" {
+			subjectFilter = ""
 		}
 
 		if openAIKey() == "" && aiStepsServiceURL() == "" {
@@ -1254,7 +1256,7 @@ func main() {
 
 			for i := range local {
 				t := &local[i]
-				if strings.TrimSpace(t.Subject) != strings.TrimSpace(req.Subject) {
+				if subjectFilter != "" && strings.TrimSpace(t.Subject) != subjectFilter {
 					continue
 				}
 				total++

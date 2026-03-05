@@ -256,9 +256,13 @@
       if (hintStepIndex >= hintSteps.length) hintStepIndex = hintSteps.length - 1;
       setMathText(hintEl, formatHintStepsUpTo(hintStepIndex));
       hintEl.classList.remove("hidden");
-      nextBtn.classList.remove("hidden");
       const isLast = hintStepIndex >= hintSteps.length - 1;
-      nextBtn.textContent = isLast ? "Скрыть" : "Дальше";
+      if (isLast) {
+        nextBtn.classList.add("hidden");
+      } else {
+        nextBtn.classList.remove("hidden");
+        nextBtn.textContent = "Дальше";
+      }
       const step = hintSteps[hintStepIndex];
       trackEvent("show_hint_step", { task_id: currentTask.id, step: step && step.step ? step.step : (hintStepIndex + 1) });
     }
@@ -291,12 +295,7 @@
 
     document.getElementById("hintNext").addEventListener("click", () => {
       if (!Array.isArray(hintSteps) || hintSteps.length === 0) return;
-      const isLast = hintStepIndex >= hintSteps.length - 1;
-      if (isLast) {
-        document.getElementById("hintText").classList.add("hidden");
-        document.getElementById("hintNext").classList.add("hidden");
-        return;
-      }
+      if (hintStepIndex >= hintSteps.length - 1) return;
       hintStepIndex += 1;
       renderHintStep();
     });
