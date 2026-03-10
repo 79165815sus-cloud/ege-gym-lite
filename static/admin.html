@@ -263,6 +263,7 @@
               <th>Подтема</th>
               <th>ЕГЭ/ОГЭ</th>
               <th>Ответ</th>
+              <th>Теория</th>
               <th>Решение</th>
               <th>Шаги</th>
               <th></th>
@@ -278,6 +279,7 @@
               <th><input id="filterSubtopic" placeholder="Фильтр"></th>
               <th><input id="filterExamType" placeholder="Фильтр"></th>
               <th><input id="filterAnswer" placeholder="Фильтр"></th>
+              <th><input id="filterTheory" placeholder="Фильтр"></th>
               <th><input id="filterSolution" placeholder="Фильтр"></th>
               <th><input id="filterHintSteps" placeholder="Фильтр"></th>
               <th></th>
@@ -511,6 +513,7 @@
           <td><input data-field="subtopic" data-id="${task.id}" value="${task.subtopic ?? ""}"></td>
           <td><input data-field="examType" data-id="${task.id}" value="${task.examType ?? ""}"></td>
           <td><input data-field="answer" data-id="${task.id}" value="${task.answer ?? ""}"></td>
+          <td><textarea data-field="theory" data-id="${task.id}">${task.theory ?? ""}</textarea></td>
           <td><textarea data-field="solution" data-id="${task.id}">${task.solution ?? ""}</textarea></td>
           <td><textarea data-field="hintStepsText" data-id="${task.id}" placeholder="Каждый шаг отделяй строкой ---">${stepsText}</textarea></td>
           <td class="row-actions"><button class="btn" onclick="removeTask(${task.id})">Удалить</button></td>
@@ -538,6 +541,7 @@
         subtopic: document.getElementById("filterSubtopic").value.trim().toLowerCase(),
         examType: document.getElementById("filterExamType").value.trim().toLowerCase(),
         answer: document.getElementById("filterAnswer").value.trim().toLowerCase(),
+        theory: document.getElementById("filterTheory").value.trim().toLowerCase(),
         solution: document.getElementById("filterSolution").value.trim().toLowerCase(),
         hintSteps: document.getElementById("filterHintSteps").value.trim().toLowerCase()
       };
@@ -553,6 +557,7 @@
         if (filters.subtopic && !String(task.subtopic ?? "").toLowerCase().includes(filters.subtopic)) return false;
         if (filters.examType && !String(task.examType ?? "").toLowerCase().includes(filters.examType)) return false;
         if (filters.answer && !String(task.answer ?? "").toLowerCase().includes(filters.answer)) return false;
+        if (filters.theory && !String(task.theory ?? "").toLowerCase().includes(filters.theory)) return false;
         if (filters.solution && !String(task.solution ?? "").toLowerCase().includes(filters.solution)) return false;
         if (filters.hintSteps) {
           const joined = Array.isArray(task.hintSteps) ? task.hintSteps.join("\n---\n") : "";
@@ -603,6 +608,7 @@
       document.getElementById("editorTitle").innerText =
         field === "question" ? "Редактирование вопроса" :
         field === "hintStepsText" ? "Редактирование шагов" :
+        field === "theory" ? "Редактирование теории" :
         "Редактирование решения";
       document.getElementById("editorTextarea").value = activeEditorField.value;
       document.getElementById("editorBackdrop").classList.remove("hidden");
@@ -636,6 +642,7 @@
           subtopic: get("subtopic").value.trim(),
           examType: get("examType").value.trim(),
           answer: get("answer").value.trim(),
+          theory: get("theory").value.trim(),
           solution: get("solution").value.trim(),
           hintSteps: parseHintSteps(get("hintStepsText").value)
         };
@@ -671,6 +678,7 @@
         subtopic: "",
         examType: "ЕГЭ",
         answer: 0,
+        theory: "",
         solution: ""
       });
       renderTable();
@@ -738,6 +746,7 @@
         subtopic: String(item.subtopic ?? defaults.subtopic ?? "").trim(),
         examType: String(item.examType ?? defaults.examType ?? "").trim(),
         answer: rawAnswer == null ? "" : String(rawAnswer).trim(),
+        theory: String(item.theory ?? "").trim(),
         solution: String(item.solution ?? "").trim(),
         hintSteps: rawHintSteps.map((s) => String(s ?? "").trim()).filter(Boolean)
       };

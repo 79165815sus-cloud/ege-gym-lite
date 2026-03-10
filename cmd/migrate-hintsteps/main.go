@@ -78,7 +78,113 @@ func splitIntoHintChunks(solution string) []string {
 	if len(chunks) == 0 {
 		return []string{solution}
 	}
+	if looksLikeWordChunks(chunks) {
+		reflowed := reflowChunksToText(chunks)
+		sentences := splitIntoSentences(reflowed)
+		if len(sentences) > 0 {
+			return sentences
+		}
+		return []string{reflowed}
+	}
 	return chunks
+}
+
+func looksLikeWordChunks(chunks []string) bool {
+	if len(chunks) < 10 {
+		return false
+	}
+	short := 0
+	total := 0
+	for _, c := range chunks {
+		r := []rune(strings.TrimSpace(c))
+		n := len(r)
+		if n == 0 {
+			continue
+		}
+		total++
+		if n <= 18 {
+			short++
+		}
+	}
+	if total == 0 {
+		return false
+	}
+	return short*100/total >= 55
+}
+
+func reflowChunksToText(chunks []string) string {
+	var b strings.Builder
+	for _, c := range chunks {
+		c = strings.TrimSpace(c)
+		if c == "" {
+			continue
+		}
+		if b.Len() > 0 {
+			b.WriteByte(' ')
+		}
+		b.WriteString(c)
+	}
+	return strings.Join(strings.Fields(b.String()), " ")
+}
+
+func splitIntoSentences(text string) []string {
+	text = strings.TrimSpace(text)
+	if text == "" {
+		return nil
+	}
+	var (
+		out []string
+		cur strings.Builder
+	)
+	flush := func() {
+		s := strings.TrimSpace(cur.String())
+		cur.Reset()
+		if s != "" {
+			out = append(out, s)
+		}
+	}
+	runes := []rune(text)
+	for i := 0; i < len(runes); i++ {
+		ch := runes[i]
+		cur.WriteRune(ch)
+		if ch != '.' && ch != '!' && ch != '?' {
+			continue
+		}
+		if i+1 >= len(runes) {
+			flush()
+			continue
+		}
+		if runes[i+1] == ' ' || runes[i+1] == '\n' || runes[i+1] == '\t' {
+			flush()
+		}
+	}
+	flush()
+
+	grouped := make([]string, 0, len(out))
+	var buf strings.Builder
+	for _, s := range out {
+		if buf.Len() == 0 {
+			buf.WriteString(s)
+			continue
+		}
+		if len([]rune(buf.String())) < 140 {
+			buf.WriteByte(' ')
+			buf.WriteString(s)
+			continue
+		}
+		grouped = append(grouped, strings.TrimSpace(buf.String()))
+		buf.Reset()
+		buf.WriteString(s)
+	}
+	if buf.Len() > 0 {
+		grouped = append(grouped, strings.TrimSpace(buf.String()))
+	}
+	if len(grouped) > 12 {
+		head := grouped[:11]
+		tail := strings.Join(grouped[11:], " ")
+		return append(head, strings.TrimSpace(tail))
+	}
+	return grouped
 }
 
 func deriveHintSteps(solution string) []string {

@@ -34,6 +34,8 @@ type Task struct {
 	Answer         Answer   `json:"answer"`
 	Solution       string   `json:"solution"`
 	HintSteps      []string `json:"hintSteps,omitempty"`
+	Theory         string   `json:"theory,omitempty"`
+	TheorySteps    []string `json:"theorySteps,omitempty"`
 }
 
 type TaskPublic struct {
@@ -114,6 +116,11 @@ type AnalyticsEvent struct {
 type HintStep struct {
 	Step int    `json:"step"`
 	Hint string `json:"hint"`
+}
+
+type TextStep struct {
+	Step int    `json:"step"`
+	Text string `json:"text"`
 }
 
 func toPublic(task Task) TaskPublic {
@@ -337,7 +344,120 @@ func splitIntoHintChunks(solution string) []string {
 	if len(chunks) == 0 {
 		return []string{solution}
 	}
+	// If the solution came from PDF copy/paste, it may contain lots of "\n\n" between words.
+	// Detect that and reflow into more meaningful chunks.
+	if looksLikeWordChunks(chunks) {
+		reflowed := reflowChunksToText(chunks)
+		sentences := splitIntoSentences(reflowed)
+		if len(sentences) > 0 {
+			return sentences
+		}
+		return []string{reflowed}
+	}
 	return chunks
+}
+
+func looksLikeWordChunks(chunks []string) bool {
+	if len(chunks) < 10 {
+		return false
+	}
+	short := 0
+	total := 0
+	for _, c := range chunks {
+		r := []rune(strings.TrimSpace(c))
+		n := len(r)
+		if n == 0 {
+			continue
+		}
+		total++
+		if n <= 18 {
+			short++
+		}
+	}
+	if total == 0 {
+		return false
+	}
+	// Heuristic: majority of chunks are tiny => likely word-wrapped.
+	return short*100/total >= 55
+}
+
+func reflowChunksToText(chunks []string) string {
+	var b strings.Builder
+	for _, c := range chunks {
+		c = strings.TrimSpace(c)
+		if c == "" {
+			continue
+		}
+		if b.Len() > 0 {
+			b.WriteByte(' ')
+		}
+		b.WriteString(c)
+	}
+	// Collapse repeated spaces.
+	return strings.Join(strings.Fields(b.String()), " ")
+}
+
+func splitIntoSentences(text string) []string {
+	text = strings.TrimSpace(text)
+	if text == "" {
+		return nil
+	}
+	// A lightweight sentence splitter good enough for "fallback" mode.
+	var (
+		out []string
+		cur strings.Builder
+	)
+	flush := func() {
+		s := strings.TrimSpace(cur.String())
+		cur.Reset()
+		if s != "" {
+			out = append(out, s)
+		}
+	}
+	runes := []rune(text)
+	for i := 0; i < len(runes); i++ {
+		ch := runes[i]
+		cur.WriteRune(ch)
+		if ch != '.' && ch != '!' && ch != '?' {
+			continue
+		}
+		// Split only if next char is whitespace (or end).
+		if i+1 >= len(runes) {
+			flush()
+			continue
+		}
+		if runes[i+1] == ' ' || runes[i+1] == '\n' || runes[i+1] == '\t' {
+			flush()
+		}
+	}
+	flush()
+	// Group very short sentences together.
+	grouped := make([]string, 0, len(out))
+	var buf strings.Builder
+	for _, s := range out {
+		if buf.Len() == 0 {
+			buf.WriteString(s)
+			continue
+		}
+		if len([]rune(buf.String())) < 140 {
+			buf.WriteByte(' ')
+			buf.WriteString(s)
+			continue
+		}
+		grouped = append(grouped, strings.TrimSpace(buf.String()))
+		buf.Reset()
+		buf.WriteString(s)
+	}
+	if buf.Len() > 0 {
+		grouped = append(grouped, strings.TrimSpace(buf.String()))
+	}
+	// Cap at 12 chunks by merging tail.
+	if len(grouped) > 12 {
+		head := grouped[:11]
+		tail := strings.Join(grouped[11:], " ")
+		return append(head, strings.TrimSpace(tail))
+	}
+	return grouped
 }
 
 func deriveHintSteps(solution string) []string {
@@ -346,6 +466,194 @@ func deriveHintSteps(solution string) []string {
 		return []string{"Пошаговое решение пока не добавлено."}
 	}
 	return chunks
+}
+
+func chemistryTheory(examTaskNumber int) string {
+	// Short “theory blocks” per exam task number (ЕГЭ).
+	switch examTaskNumber {
+	case 1:
+		return "Классификация неорганических веществ и формулы.\nВспомни классы: оксиды/кислоты/основания/соли. Проверь валентности/заряды и коэффициенты в формулах."
+	case 2:
+		return "Степени окисления.\nОпредели тип соединения, расставь степени окисления по правилам (H +1, O −2, F −1, сумма = заряд)."
+	case 3:
+		return "Окислительно‑восстановительные реакции.\nНайди восстановитель/окислитель по изменениям степеней окисления, уравняй электронным балансом, затем коэффициенты."
+	case 4:
+		return "Реакции ионного обмена (сокращённое ионное уравнение).\nВыдели сильные электролиты, распиши на ионы, сократи зрителей. Условие протекания: осадок/газ/слабый электролит."
+	case 5:
+		return "Ряд активности металлов и вытеснение.\nМеталл активнее вытесняет менее активный из соли; H2 вытесняют металлы левее водорода. Учитывай пассивацию (Al, Cr, Fe) в конц. кислотах."
+	case 6:
+		return "Свойства простых веществ и их типичные реакции.\nДля неметаллов: горение, взаимодействие с металлами/водой/щёлочами (если актуально). Для металлов: с водой/кислотами/солями."
+	case 7:
+		return "Азот и соединения азота.\nКлючевые формы: NH3/NH4+/NO2−/NO3−, степени окисления N (−3, +3, +5). Реакции: восстановит./окислит. свойства, получение."
+	case 8:
+		return "Сера и соединения серы.\nСтепени окисления S (−2, 0, +4, +6). SO2/SO3, H2S/H2SO3/H2SO4: кислотные свойства, ОВР (H2S восстановитель, H2SO4(конц) окислитель)."
+	case 9:
+		return "Галогены и их соединения.\nОкислительные свойства F2>Cl2>Br2>I2. Вытеснение галогенов из солей; реакции с водой/щёлочами (диспропорционирование для Cl2/Br2/I2)."
+	case 10:
+		return "Щёлочные и щёлочноземельные металлы.\nТипичные реакции: с водой, кислородом, кислотами; растворимость оснований/солей; карбонаты/гидрокарбонаты."
+	case 11:
+		return "Алюминий и амфотерность.\nAl2O3 и Al(OH)3 реагируют и с кислотами, и со щёлочами (алюмінаты). Учитывай защитную плёнку и условия растворения."
+	case 12:
+		return "Железо и соединения Fe(II)/Fe(III).\nРазличай Fe2+ и Fe3+, характерные реакции (окисление Fe2+ до Fe3+), гидроксиды и их цвета, качественные признаки."
+	case 13:
+		return "Качественные реакции на ионы.\nЧастые тесты: SO4^2− (Ba2+ → BaSO4↓), CO3^2− (кислота → CO2↑), Cl− (Ag+ → AgCl↓), NH4+ (щёлочь → NH3↑), Fe3+ (SCN− → красный комплекс)."
+	case 14:
+		return "Растворимость и условия протекания реакций.\nПользуйся таблицей растворимости. Осадок/газ/вода/слабая кислота — признак необратимости."
+	case 15:
+		return "Электролитическая диссоциация и pH.\nСильные/слабые электролиты; pH для кислот/щёлочей: pH = −log[H+], pOH = −log[OH−], pH+pOH=14 (при 25°C)."
+	case 16:
+		return "Гидролиз солей.\nСоль слабой кислоты/основания гидролизуется. Определи среду: катион слабого основания → кислая; анион слабой кислоты → щелочная; оба слабые — сравни Ka/Kb."
+	case 17:
+		return "Окислительно‑восстановительные превращения в растворах.\nОпредели изменения степеней окисления, составь баланс, учти среду (кислая/щелочная), добавляй H2O/H+/OH− при уравнивании."
+	case 18:
+		return "Тепловые эффекты и энергетика (если встречается).\nЧитай знак ΔH, экзотермич./эндотермич. процессы. Следи за единицами и стехиометрией."
+	case 19:
+		return "Скорость реакции и равновесие (если встречается).\nФакторы скорости: концентрация, температура, катализатор, площадь. Смещение равновесия по Ле Шателье: давление/концентрации/температура."
+	case 20:
+		return "Органика: строение и изомерия.\nОпредели функциональную группу и класс, проверь валентности, типы изомерии (скелетная/позиционная/межклассовая)."
+	case 21:
+		return "Алканы/циклоалканы.\nРеакции: горение, замещение (галогенирование при hv), крекинг/изомеризация. Номенклатура и общая формула."
+	case 22:
+		return "Алкены/алкины.\nРеакции присоединения (H2, Hal2, HX, H2O), правило Марковникова (и анти‑Марковникова для пероксидного эффекта HBr), полимеризация."
+	case 23:
+		return "Ароматика (бензол и производные).\nЭлектрофильное замещение (нитрование, галогенирование, алкилирование/ацилирование), ориентанты (−I/+M и т.п.) в упрощённом виде."
+	case 24:
+		return "Спирты и фенолы.\nСпирты: окисление, дегидратация, замещение OH (через HX). Фенолы: более кислотны, реакции с Br2(водн), NaOH, комплекс с FeCl3."
+	case 25:
+		return "Альдегиды/кетоны.\nКарбонильная группа, окисление альдегидов (реакции «серебряного зеркала», Cu(OH)2), восстановление до спиртов."
+	case 26:
+		return "Карбоновые кислоты и сложные эфиры.\nКислотность, взаимодействие с основаниями/металлами/карбонатами. Эстерификация (кислота + спирт ⇄ эфир + вода, H2SO4(конц))."
+	case 27:
+		return "Амины, аминокислоты, белки.\nАмины — основания; аминокислоты амфотерны. Пептидная связь, качественные реакции (биуретовая и др., если нужны)."
+	case 28:
+		return "Полимеры и пластмассы.\nПовторяющееся звено, мономер, тип реакции (полимеризация/поликонденсация). Связь между строением и свойствами."
+	case 29:
+		return "Задача с расчётами по растворам/массовой доле.\nИспользуй: ω = m(в-ва)/m(р-ра), c = n/V, n = m/M. Проверяй единицы (г, л, моль) и промежуточные данные."
+	case 30:
+		return "Расчёты по уравнению реакции.\nСоставь уравнение, найди количество вещества (n) из данных, используй стехиометрические коэффициенты. Не забывай про выход/примеси, если указаны."
+	case 31:
+		return "ОВР/ионные уравнения повышенной сложности.\nСначала определись с средой, уравняй электронным балансом, затем переходи к ионному/молекулярному виду. Контроль: заряды и атомы сходятся."
+	case 32:
+		return "Цепочки превращений (неорганика + органика).\nОпредели классы веществ на каждом шаге, подбери типичные реагенты. Проверяй условия: катализатор, нагрев, среда, избыток."
+	case 33:
+		return "Экспериментальная задача/качественный анализ.\nОтталкивайся от наблюдений: цвет осадка/раствора, газ, растворимость. План: гипотеза → реактив → ожидаемый признак."
+	case 34:
+		return "Комплексная расчётно‑логическая задача.\nРазбей на этапы, введи переменные, составь уравнения/балансы, последовательно подставляй. В конце проверь смысл результата (диапазоны, единицы)."
+	default:
+		return ""
+	}
+}
+
+func defaultTheory(task Task) string {
+	if strings.TrimSpace(task.Subject) != "Химия" {
+		return ""
+	}
+	// Can be overridden per-task via task.Theory.
+	return chemistryTheory(task.ExamTaskNumber)
+}
+
+func chemistryTheorySteps(examTaskNumber int) []string {
+	// Build 3 steps from the existing single-block theory text.
+	raw := strings.TrimSpace(chemistryTheory(examTaskNumber))
+	if raw == "" {
+		return nil
+	}
+	raw = strings.ReplaceAll(raw, "\r\n", "\n")
+	title := raw
+	rest := ""
+	if idx := strings.Index(raw, "\n"); idx >= 0 {
+		title = strings.TrimSpace(raw[:idx])
+		rest = strings.TrimSpace(raw[idx+1:])
+	}
+	if rest == "" {
+		rest = title
+	}
+	check := "Проверь себя: что именно просят; где типичные ошибки; всё ли сошлось по зарядам/коэффициентам/единицам."
+	if examTaskNumber >= 29 {
+		check = "Проверь себя: выписаны данные, единицы приведены, формулы подписаны, стехиометрия по коэффициентам верная."
+	}
+	if examTaskNumber >= 20 && examTaskNumber <= 28 {
+		check = "Проверь себя: класс вещества определён верно, функциональная группа на месте, условия реакции и продукты согласованы."
+	}
+	out := []string{title, rest, check}
+	normalized := make([]string, 0, 3)
+	for _, s := range out {
+		s = strings.TrimSpace(s)
+		if s == "" {
+			continue
+		}
+		normalized = append(normalized, s)
+	}
+	return normalized
+}
+
+func splitTheoryTextToSteps(theory string) []string {
+	theory = strings.TrimSpace(strings.ReplaceAll(theory, "\r\n", "\n"))
+	if theory == "" {
+		return nil
+	}
+	// Prefer explicit delimiter if present.
+	if strings.Contains(theory, "\n---\n") {
+		parts := strings.Split(theory, "\n---\n")
+		out := make([]string, 0, len(parts))
+		for _, p := range parts {
+			p = strings.TrimSpace(p)
+			if p == "" {
+				continue
+			}
+			out = append(out, p)
+		}
+		return out
+	}
+	// Otherwise split by non-empty lines.
+	lines := strings.Split(theory, "\n")
+	out := make([]string, 0, len(lines))
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+		out = append(out, line)
+	}
+	if len(out) == 0 {
+		return []string{theory}
+	}
+	return out
+}
+
+func buildTheorySteps(task Task) []TextStep {
+	// Highest priority: explicit theorySteps in DB.
+	if len(task.TheorySteps) > 0 {
+		out := make([]TextStep, 0, len(task.TheorySteps))
+		for i, s := range task.TheorySteps {
+			s = strings.TrimSpace(strings.ReplaceAll(s, "\r\n", "\n"))
+			if s == "" {
+				continue
+			}
+			out = append(out, TextStep{Step: i + 1, Text: s})
+		}
+		if len(out) > 0 {
+			return out
+		}
+	}
+
+	// Next: derive from theory text (task.Theory or default).
+	theory := strings.TrimSpace(task.Theory)
+	if theory == "" {
+		theory = defaultTheory(task)
+	}
+	steps := splitTheoryTextToSteps(theory)
+	if len(steps) == 0 && strings.TrimSpace(task.Subject) == "Химия" {
+		steps = chemistryTheorySteps(task.ExamTaskNumber)
+	}
+	if len(steps) == 0 {
+		return []TextStep{{Step: 1, Text: "Теория пока не добавлена."}}
+	}
+	out := make([]TextStep, 0, len(steps))
+	for i, s := range steps {
+		out = append(out, TextStep{Step: i + 1, Text: s})
+	}
+	return out
 }
 
 func ensureHintSteps(task *Task) bool {
@@ -845,6 +1153,82 @@ func main() {
 		json.NewEncoder(w).Encode(map[string]string{
 			"solution":         task.Solution,
 			"solutionImageUrl": task.SolutionImage,
+		})
+	})
+
+	// API: показать теорию (опорный блок)
+	http.HandleFunc("/api/theory", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		var req struct {
+			ID int `json:"id"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			http.Error(w, "bad request", http.StatusBadRequest)
+			return
+		}
+
+		tasksMu.Lock()
+		task, ok := findTask(req.ID)
+		tasksMu.Unlock()
+		if !ok {
+			http.Error(w, "task not found", http.StatusNotFound)
+			return
+		}
+
+		theory := strings.TrimSpace(task.Theory)
+		if theory == "" && len(task.TheorySteps) > 0 {
+			parts := make([]string, 0, len(task.TheorySteps))
+			for _, s := range task.TheorySteps {
+				s = strings.TrimSpace(strings.ReplaceAll(s, "\r\n", "\n"))
+				if s == "" {
+					continue
+				}
+				parts = append(parts, s)
+			}
+			theory = strings.TrimSpace(strings.Join(parts, "\n\n"))
+		}
+		if theory == "" {
+			theory = defaultTheory(task)
+		}
+		json.NewEncoder(w).Encode(map[string]string{
+			"theory": theory,
+		})
+	})
+
+	// API: теория по шагам (для UI "дальше")
+	http.HandleFunc("/api/theory-steps", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		var req struct {
+			ID int `json:"id"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			http.Error(w, "bad request", http.StatusBadRequest)
+			return
+		}
+		if req.ID <= 0 {
+			http.Error(w, "id required", http.StatusBadRequest)
+			return
+		}
+
+		tasksMu.Lock()
+		task, ok := findTask(req.ID)
+		tasksMu.Unlock()
+		if !ok {
+			http.Error(w, "task not found", http.StatusNotFound)
+			return
+		}
+
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"taskId": task.ID,
+			"steps":  buildTheorySteps(task),
 		})
 	})
 

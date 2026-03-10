@@ -524,6 +524,7 @@
       <div class="row">
         <button class="btn btn-soft" id="answerButton" onclick="showAnswer()">Ответ</button>
         <button class="btn btn-soft" id="hintButton" onclick="startHints()">Подсказка</button>
+        <button class="btn btn-soft" id="theoryButton" onclick="showTheory()">Теория</button>
         <button class="btn btn-soft hidden" id="solutionButton" onclick="showSolution()">Решение</button>
       </div>
 
@@ -537,6 +538,7 @@
       <div id="hintActions" class="row hidden" style="margin-bottom: 0; margin-top: 10px;">
         <button class="btn btn-soft" id="hintNext" type="button">Дальше</button>
       </div>
+      <p id="theoryText" class="hint hidden"></p>
       <p id="answerText" class="hint hidden"></p>
       <p id="solutionText" class="hint hidden"></p>
       <img id="solutionImage" class="solution-image hidden" alt="Иллюстрация к решению">
@@ -758,12 +760,14 @@
       document.getElementById("result").innerText = "";
       setMathText(document.getElementById("answerText"), "");
       setMathText(document.getElementById("hintText"), "");
+      setMathText(document.getElementById("theoryText"), "");
       setMathText(document.getElementById("solutionText"), "");
       const manualNotice = document.getElementById("manualCheckNotice");
       manualNotice.classList.add("hidden");
       manualNotice.innerText = "";
       document.getElementById("hintText").classList.add("hidden");
       document.getElementById("hintActions").classList.add("hidden");
+      document.getElementById("theoryText").classList.add("hidden");
       document.getElementById("answerText").classList.add("hidden");
       document.getElementById("solutionText").classList.add("hidden");
       const solutionImage = document.getElementById("solutionImage");
@@ -960,6 +964,41 @@
       hintSteps = (data && Array.isArray(data.steps)) ? data.steps : [];
       hintStepIndex = 0;
       renderHintStep();
+    }
+
+    async function showTheory() {
+      if (!currentTask || !currentTask.id) return;
+      const theoryEl = document.getElementById("theoryText");
+      const res = await fetch("/api/theory", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ id: currentTask.id })
+      });
+      if (!res.ok) {
+        setMathText(theoryEl, "Теория: нет данных.", { normalize: true });
+        theoryEl.classList.remove("hidden");
+        return;
+      }
+      const data = await res.json();
+      const raw = data && typeof data.theory === "string" ? data.theory : "";
+      const url = extractFirstUrl(raw);
+      if (url) {
+        window.open(url, "_blank", "noopener,noreferrer");
+        trackEvent("open_theory_link", { task_id: currentTask.id, url });
+        return;
+      }
+      const text = String(raw || "").trim();
+      setMathText(theoryEl, text ? ("Теория:\n" + text) : "Теория: пока не добавлено.", { normalize: true });
+      theoryEl.classList.remove("hidden");
+      trackEvent("show_theory", { task_id: currentTask.id });
+    }
+
+    function extractFirstUrl(text) {
+      const raw = String(text || "").trim();
+      if (!raw) return "";
+      // Accept raw URLs or URLs embedded in text.
+      const match = raw.match(/https?:\/\/[^\s<>"')\]]+/i);
+      return match ? String(match[0]) : "";
     }
 
     document.getElementById("hintNext").addEventListener("click", () => {

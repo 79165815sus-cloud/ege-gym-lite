@@ -155,11 +155,13 @@
 
       <div class="row">
         <button class="btn" onclick="startHints()">Подсказка</button>
+        <button class="btn" onclick="showTheory()">Теория</button>
         <button class="btn hidden" id="hintNext" type="button">Дальше</button>
       </div>
 
       <p id="result" class="result"></p>
       <p id="hintText" class="result hidden" style="font-weight: 500; color: #4c1d95;"></p>
+      <p id="theoryText" class="result hidden" style="font-weight: 500; color: #4c1d95;"></p>
     </div>
   </div>
 
@@ -202,7 +204,9 @@
       }
       setMathText(document.getElementById("result"), "");
       setMathText(document.getElementById("hintText"), "");
+      setMathText(document.getElementById("theoryText"), "");
       document.getElementById("hintText").classList.add("hidden");
+      document.getElementById("theoryText").classList.add("hidden");
       document.getElementById("hintNext").classList.add("hidden");
       hintSteps = null;
       hintStepIndex = 0;
@@ -291,6 +295,40 @@
       hintSteps = (data && Array.isArray(data.steps)) ? data.steps : [];
       hintStepIndex = 0;
       renderHintStep();
+    }
+
+    async function showTheory() {
+      if (!currentTask || !currentTask.id) return;
+      const theoryEl = document.getElementById("theoryText");
+      const res = await fetch("/api/theory", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ id: currentTask.id })
+      });
+      if (!res.ok) {
+        setMathText(theoryEl, "Теория: нет данных.");
+        theoryEl.classList.remove("hidden");
+        return;
+      }
+      const data = await res.json();
+      const raw = data && typeof data.theory === "string" ? data.theory : "";
+      const url = extractFirstUrl(raw);
+      if (url) {
+        window.open(url, "_blank", "noopener,noreferrer");
+        trackEvent("open_theory_link", { task_id: currentTask.id, url });
+        return;
+      }
+      const text = String(raw || "").trim();
+      setMathText(theoryEl, text ? ("Теория:\n" + text) : "Теория: пока не добавлено.");
+      theoryEl.classList.remove("hidden");
+      trackEvent("show_theory", { task_id: currentTask.id });
+    }
+
+    function extractFirstUrl(text) {
+      const raw = String(text || "").trim();
+      if (!raw) return "";
+      const match = raw.match(/https?:\/\/[^\s<>"')\]]+/i);
+      return match ? String(match[0]) : "";
     }
 
     document.getElementById("hintNext").addEventListener("click", () => {
