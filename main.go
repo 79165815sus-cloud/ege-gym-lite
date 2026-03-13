@@ -1701,7 +1701,13 @@ func main() {
 
 	// статика
 	fs := http.FileServer(http.Dir("./static"))
-	http.Handle("/", fs)
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/" {
+			http.ServeFile(w, r, "./static/landing.html")
+			return
+		}
+		fs.ServeHTTP(w, r)
+	})
 
 	port := strings.TrimSpace(os.Getenv("PORT"))
 	if port == "" {

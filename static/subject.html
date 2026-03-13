@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Предмет — 100‑балльный банк</title>
+  <style>
+    :root{
+      color-scheme: light;
+      --bg: #f6f3ff;
+      --card: #ffffff;
+      --text: #111827;
+      --muted: #6b7280;
+      --primary: #7c3aed;
+      --primary-hover: #6d28d9;
+      --accent: #4c1d95;
+      --border: #e5e7eb;
+      --shadow: 0 18px 40px rgba(15, 23, 42, 0.12);
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body{
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, Arial, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(900px 600px at 18% 12%, rgba(124,58,237,0.18), transparent 60%),
+        radial-gradient(900px 600px at 86% 26%, rgba(76,29,149,0.14), transparent 60%),
+        linear-gradient(180deg, #f7f2ff 0%, #f5f3ff 45%, #fbfbff 100%);
+    }
+    a { color: inherit; }
+
+    .wrap{
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 20px 16px 56px;
+    }
+    .topbar{
+      display:flex;
+      align-items:center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 0 18px;
+    }
+    .brand{
+      display:flex;
+      align-items:center;
+      gap: 10px;
+      text-decoration: none;
+    }
+    .logo{
+      width: 36px;
+      height: 36px;
+      border-radius: 12px;
+      background: var(--primary);
+      color:#fff;
+      font-weight: 900;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      box-shadow: 0 12px 24px rgba(124, 58, 237, 0.28);
+      letter-spacing: -0.02em;
+      flex-shrink: 0;
+    }
+    .brand-title{
+      display:flex;
+      flex-direction: column;
+      line-height: 1.1;
+    }
+    .brand-title strong{ font-size: 14px; letter-spacing: -0.01em; }
+    .brand-title span{ font-size: 12px; color: var(--muted); }
+    .link{
+      text-decoration:none;
+      font-size: 13px;
+      color: var(--accent);
+      padding: 8px 10px;
+      border-radius: 10px;
+      border: 1px solid #e9d5ff;
+      background: rgba(255,255,255,0.6);
+      transition: background .15s ease, transform .05s ease;
+      white-space: nowrap;
+    }
+    .link:hover{ background:#f5f3ff; }
+    .link:active{ transform: translateY(1px); }
+
+    .hero{
+      border: 1px solid rgba(233, 213, 255, 0.9);
+      background: linear-gradient(180deg, rgba(255,255,255,0.82), rgba(255,255,255,0.68));
+      backdrop-filter: blur(8px);
+      border-radius: 22px;
+      box-shadow: var(--shadow);
+      padding: 26px;
+      display:grid;
+      gap: 14px;
+    }
+    h1{
+      margin: 0;
+      font-size: 32px;
+      letter-spacing: -0.03em;
+      color: #1f2937;
+    }
+    .hero p{
+      margin: 0;
+      font-size: 15px;
+      line-height: 1.55;
+      color: #374151;
+      max-width: 80ch;
+    }
+    .meta{
+      display:flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items:center;
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      gap: 6px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: #f5f3ff;
+      border: 1px solid #e9d5ff;
+      color: var(--accent);
+      font-weight: 600;
+    }
+    .cta-row{
+      display:flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items:center;
+      margin-top: 2px;
+    }
+    .btn{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap: 8px;
+      padding: 11px 16px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: #fff;
+      cursor: pointer;
+      font-size: 14px;
+      text-decoration:none;
+      transition: transform .05s ease, background .15s ease, border-color .15s ease, color .15s ease;
+    }
+    .btn:hover{ background:#f8fafc; }
+    .btn:active{ transform: translateY(1px); }
+    .btn-primary{
+      background: var(--primary);
+      border-color: var(--primary);
+      color:#fff;
+      box-shadow: 0 14px 28px rgba(124, 58, 237, 0.22);
+    }
+    .btn-primary:hover{ background: var(--primary-hover); }
+    .btn-ghost{
+      background: transparent;
+      border-color: #d8b4fe;
+      color: var(--accent);
+    }
+    .btn-ghost:hover{ background: #f5f3ff; }
+
+    .section{
+      margin-top: 18px;
+      border-radius: 22px;
+      border: 1px solid rgba(233, 213, 255, 0.75);
+      background: rgba(255,255,255,0.75);
+      box-shadow: 0 14px 28px rgba(15, 23, 42, 0.08);
+      padding: 20px;
+    }
+    .section h2{
+      margin: 0 0 6px;
+      font-size: 20px;
+      letter-spacing: -0.01em;
+      color: #1f2937;
+    }
+    .sub{
+      margin: 0 0 14px;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.45;
+      max-width: 92ch;
+    }
+
+    .exam-grid{
+      display:grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 12px;
+      align-items: start;
+    }
+    .box{
+      border: 1px solid rgba(229,231,235,0.95);
+      background:#fff;
+      border-radius: 16px;
+      padding: 14px;
+      box-shadow: 0 10px 18px rgba(15, 23, 42, 0.06);
+    }
+    .kv{
+      display:grid;
+      gap: 8px;
+      font-size: 13px;
+      color:#374151;
+    }
+    .kv div{ display:flex; justify-content: space-between; gap: 10px; }
+    .kv strong{ color:#1f2937; font-weight: 700; }
+    .countdown{
+      font-size: 14px;
+      color: var(--accent);
+      font-weight: 700;
+    }
+
+    table{
+      width: 100%;
+      border-collapse: collapse;
+      overflow: hidden;
+      border-radius: 16px;
+      background: #fff;
+      border: 1px solid rgba(229,231,235,0.95);
+      box-shadow: 0 10px 18px rgba(15, 23, 42, 0.06);
+      font-size: 13px;
+    }
+    th, td{
+      padding: 10px 10px;
+      border-bottom: 1px solid rgba(229,231,235,0.85);
+      vertical-align: top;
+      text-align: left;
+    }
+    th{
+      background: #fafafa;
+      color: var(--accent);
+      font-weight: 700;
+      font-size: 12px;
+      letter-spacing: 0.02em;
+    }
+    tr:last-child td{ border-bottom: none; }
+    .right{ text-align:right; }
+    .mini-btn{
+      padding: 8px 10px;
+      border-radius: 12px;
+      border: 1px solid #e9d5ff;
+      background: #f5f3ff;
+      color: var(--accent);
+      cursor: pointer;
+      text-decoration: none;
+      font-size: 12px;
+      font-weight: 700;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      transition: transform .05s ease, background .15s ease, border-color .15s ease;
+      white-space: nowrap;
+    }
+    .mini-btn:hover{ background:#ede9fe; border-color:#ddd6fe; }
+    .mini-btn:active{ transform: translateY(1px); }
+
+    .variants{
+      display:grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 10px;
+    }
+    .tile{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      text-align:center;
+      min-height: 54px;
+      padding: 10px 10px;
+      border-radius: 14px;
+      border: 1px solid rgba(229, 231, 235, 0.95);
+      background: #fff;
+      text-decoration:none;
+      font-size: 13px;
+      color: #1f2937;
+      transition: transform .10s ease, border-color .15s ease, background .15s ease, box-shadow .15s ease;
+      box-shadow: 0 10px 18px rgba(15, 23, 42, 0.06);
+    }
+    .tile:hover{
+      transform: translateY(-2px);
+      border-color: #d8b4fe;
+      background: #faf5ff;
+      box-shadow: 0 14px 26px rgba(15, 23, 42, 0.10);
+    }
+
+    .stats-grid{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      align-items: start;
+    }
+    .chart{
+      width: 100%;
+      height: 170px;
+      display:block;
+      background: #fff;
+      border: 1px solid rgba(229,231,235,0.95);
+      border-radius: 16px;
+      box-shadow: 0 10px 18px rgba(15, 23, 42, 0.06);
+      overflow: hidden;
+    }
+    .chart-caption{
+      margin-top: 8px;
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
+    footer{
+      margin-top: 18px;
+      color: var(--muted);
+      font-size: 12px;
+      display:flex;
+      align-items:center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+      padding: 0 4px;
+    }
+
+    @media (max-width: 980px){
+      .variants{ grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .exam-grid{ grid-template-columns: 1fr; }
+      .stats-grid{ grid-template-columns: 1fr; }
+    }
+    @media (max-width: 560px){
+      .variants{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      h1{ font-size: 28px; }
+      .hero{ padding: 20px; }
+      .section{ padding: 18px; }
+      th:nth-child(2), td:nth-child(2){ display:none; } /* hide "type" on tiny screens */
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <a class="brand" href="/" aria-label="100‑балльный банк">
+        <div class="logo">100</div>
+        <div class="brand-title">
+          <strong>100‑балльный банк</strong>
+          <span>страница предмета</span>
+        </div>
+      </a>
+      <a class="link" href="/#start">К предметам</a>
+    </div>
+
+    <div class="hero">
+      <div class="meta">
+        <span class="pill" id="pillExamType">ЕГЭ</span>
+        <span class="pill" id="pillSubject">Предмет</span>
+      </div>
+      <h1 id="subjectTitle">Предмет</h1>
+      <p id="subjectSubtitle">Всё, что нужно для спокойной и системной подготовки: даты, критерии, статистика прошлых лет и тренировка по номерам.</p>
+      <div class="cta-row">
+        <a class="btn btn-primary" id="btnStart" href="/filters.html">Начать тренировку</a>
+        <a class="btn btn-ghost" href="#variants">К вариантам</a>
+      </div>
+    </div>
+
+    <div class="section" id="dates">
+      <h2>Когда экзамен</h2>
+      <p class="sub">Сроки и длительность. Счётчик обновляется автоматически.</p>
+      <div class="exam-grid">
+        <div class="box">
+          <div class="kv">
+            <div><span><strong>Основной день</strong></span><span id="examMain">—</span></div>
+            <div><span><strong>Резерв</strong></span><span id="examReserve">—</span></div>
+            <div><span><strong>Длительность</strong></span><span id="examDuration">—</span></div>
+          </div>
+        </div>
+        <div class="box">
+          <div class="countdown" id="examCountdown">До экзамена осталось: —</div>
+          <div class="chart-caption" id="examCountdownHint">Если даты ещё не заполнены — добавим их позже.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section" id="mistakes">
+      <h2>Где чаще ошибаются</h2>
+      <p class="sub">Процент ошибок по номерам — чтобы понять, что подтянуть в первую очередь.</p>
+      <table>
+        <thead>
+          <tr>
+            <th style="width: 90px;">№ задания</th>
+            <th>Тема/тип</th>
+            <th class="right" style="width: 110px;">Ошибки, %</th>
+            <th class="right" style="width: 160px;">Тренироваться</th>
+          </tr>
+        </thead>
+        <tbody id="mistakesBody"></tbody>
+      </table>
+      <p class="sub" style="margin-top: 10px;">Нажми на номер — откроем тренировку по этому типу заданий.</p>
+    </div>
+
+    <div class="section" id="variants">
+      <h2>Готовые варианты</h2>
+      <p class="sub">Пройди вариант целиком — как на экзамене.</p>
+      <div class="variants" id="variantsGrid"></div>
+    </div>
+
+    <div class="section" id="stats">
+      <h2>Как сдали в прошлом году</h2>
+      <p class="sub">Коротко по статистике — чтобы трезво оценить сложность и распределить силы.</p>
+      <div class="stats-grid">
+        <div class="box">
+          <div class="kv">
+            <div><span><strong>Средний результат</strong></span><span id="statAvg">—</span></div>
+            <div><span><strong>Порог</strong></span><span id="statThreshold">—</span></div>
+            <div><span><strong>100‑балльники</strong></span><span id="statHundreds">—</span></div>
+          </div>
+        </div>
+        <div>
+          <svg class="chart" id="statsChart" viewBox="0 0 560 170" xmlns="http://www.w3.org/2000/svg" aria-label="График результатов прошлого года"></svg>
+          <div class="chart-caption">Распределение участников по диапазонам баллов.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2 style="margin-bottom: 6px;">Поступай в вуз мечты — шаг за шагом</h2>
+      <p class="sub" style="margin-bottom: 14px;">Выбери номер или вариант и начни тренироваться сегодня — регулярность даёт высокий балл.</p>
+      <a class="btn btn-primary" id="btnStart2" href="/filters.html">Начать тренировку</a>
+    </div>
+
+    <footer>
+      <div>© 100‑балльный банк — банк заданий ЕГЭ/ОГЭ</div>
+      <div><a class="link" href="/index.html">Тренировка</a></div>
+    </footer>
+  </div>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const examType = (params.get("examType") || "ЕГЭ").trim() || "ЕГЭ";
+    const subject = (params.get("subject") || "").trim() || "Математика профиль";
+
+    const subjectConfigs = {
+      "ЕГЭ::Математика профиль": {
+        displayName: "Математика профиль",
+        exam: {
+          // Источник: расписание ЕГЭ-2026 (основной период: 8 июня; резерв: 23 июня),
+          // длительность профильной математики 3ч55мин (235 минут).
+          // См. например: https://skillbox.ru/media/education/raspisanie-ege-2026/
+          main: "2026-06-08",
+          reserve: "2026-06-23",
+          durationText: "3 ч 55 мин (235 минут)"
+        },
+        mistakes: [
+          { n: 1,  type: "Планиметрия (углы/окружность/треугольники)", err: "17.6%" },
+          { n: 2,  type: "Векторы и координаты (геометрия/алгебра)", err: "15.1%" },
+          { n: 3,  type: "Стереометрия / объёмы и площади", err: "30.1%" },
+          { n: 4,  type: "Вероятность (базовые модели)", err: "7.2%" },
+          { n: 5,  type: "Комбинаторика / подсчёт вариантов", err: "27.4%" },
+          { n: 6,  type: "Уравнения (разные типы)", err: "2.9%" },
+          { n: 7,  type: "Неравенства / системы", err: "41.0%" },
+          { n: 8,  type: "Производная и её применение", err: "38.8%" },
+          { n: 9,  type: "Прогрессии / проценты / фин. математика", err: "31.5%" },
+          { n: 10, type: "Текстовые задачи", err: "24.5%" },
+          { n: 11, type: "Тригонометрия", err: "15.3%" },
+          { n: 12, type: "Анализ функций (база)", err: "30.4%" },
+          { n: 13, type: "Развёрнутый ответ: уравнение/система", err: "53.0%" },
+          { n: 14, type: "Развёрнутый ответ: стереометрия", err: "96.0%" },
+          { n: 15, type: "Развёрнутый ответ: неравенство", err: "72.7%" },
+          { n: 16, type: "Развёрнутый ответ: планиметрия", err: "71.2%" },
+          { n: 17, type: "Развёрнутый ответ: экономическая задача", err: "91.4%" },
+          { n: 18, type: "Развёрнутый ответ: параметры", err: "94.8%" },
+          { n: 19, type: "Развёрнутый ответ: логическая/олимпиадная", err: "84.6%" }
+        ],
+        variants: { count: 19 },
+        stats: {
+          avg: 62,
+          threshold: 27,
+          hundreds: 188,
+          distribution: [
+            { label: "ниже 27", short: "<27", percent: 3.7 },
+            { label: "27–60", short: "27–60", percent: 32.8 },
+            { label: "61–80", short: "61–80", percent: 51.8 },
+            { label: "81–100", short: "81–100", percent: 11.7 }
+          ]
+        }
+      }
+    };
+
+    function key() { return `${examType}::${subject}`; }
+    function getConfig() {
+      const cfg = subjectConfigs[key()];
+      return cfg || {
+        displayName: subject,
+        exam: { main: "", reserve: "", durationText: "" },
+        mistakes: [],
+        variants: { count: 0 },
+        stats: { avg: null, threshold: null, hundreds: null }
+      };
+    }
+
+    function formatDateRu(iso) {
+      const s = String(iso || "").trim();
+      if (!s) return "—";
+      const d = new Date(s + "T00:00:00");
+      if (Number.isNaN(d.getTime())) return s;
+      return d.toLocaleDateString("ru-RU", { year: "numeric", month: "long", day: "numeric" });
+    }
+
+    function daysUntil(iso) {
+      const s = String(iso || "").trim();
+      if (!s) return null;
+      const target = new Date(s + "T00:00:00");
+      if (Number.isNaN(target.getTime())) return null;
+      const now = new Date();
+      const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const diff = Math.ceil((target.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+      return Number.isFinite(diff) ? diff : null;
+    }
+
+    function buildTrainingUrl(opts) {
+      const p = new URLSearchParams();
+      p.set("examType", examType);
+      p.set("subject", subject);
+      if (opts && opts.examTaskNumber) p.set("examTaskNumber", String(opts.examTaskNumber));
+      if (opts && opts.count) p.set("count", String(opts.count));
+      if (opts && opts.sequence) p.set("sequence", "1");
+      if (opts && opts.variant) p.set("variant", String(opts.variant));
+      if (opts && opts.startIndex) p.set("startIndex", String(opts.startIndex));
+      return "/index.html?" + p.toString();
+    }
+
+    function buildFiltersUrl(opts) {
+      const p = new URLSearchParams();
+      p.set("examType", examType);
+      p.set("subject", subject);
+      if (opts && opts.examTaskNumber) p.set("examTaskNumber", String(opts.examTaskNumber));
+      if (opts && opts.count) p.set("count", String(opts.count));
+      return "/filters.html?" + p.toString();
+    }
+
+    function renderMistakes(cfg) {
+      const body = document.getElementById("mistakesBody");
+      body.innerHTML = "";
+      const rows = Array.isArray(cfg.mistakes) && cfg.mistakes.length ? cfg.mistakes : [];
+      if (!rows.length) {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td colspan="4">Статистика по номерам скоро появится. Пока можно тренироваться по любому номеру через настройку.</td>`;
+        body.appendChild(tr);
+        return;
+      }
+      rows.forEach((row) => {
+        const err = row.err == null ? "—" : String(row.err);
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td><strong>№${row.n}</strong></td>
+          <td>${row.type || ""}</td>
+          <td class="right">${err}</td>
+          <td class="right"><a class="mini-btn" href="${buildTrainingUrl({ examTaskNumber: row.n, count: 10 })}">Тренировать №${row.n}</a></td>
+        `;
+        body.appendChild(tr);
+      });
+    }
+
+    function renderVariants(cfg) {
+      const grid = document.getElementById("variantsGrid");
+      grid.innerHTML = "";
+      const count = cfg.variants && Number(cfg.variants.count) ? Number(cfg.variants.count) : 0;
+      if (!count) {
+        grid.innerHTML = `<div class="sub" style="margin:0;">Варианты в подготовке. Пока можно тренироваться по номерам.</div>`;
+        return;
+      }
+      for (let i = 1; i <= count; i += 1) {
+        const a = document.createElement("a");
+        a.className = "tile";
+        a.href = buildTrainingUrl({ sequence: true, variant: i, count: count, startIndex: 1 });
+        a.textContent = `Вариант ${i}`;
+        grid.appendChild(a);
+      }
+    }
+
+    function renderStats(cfg) {
+      const avg = cfg.stats ? cfg.stats.avg : null;
+      const thr = cfg.stats ? cfg.stats.threshold : null;
+      const hundreds = cfg.stats ? cfg.stats.hundreds : null;
+      const distribution = cfg.stats ? cfg.stats.distribution : null;
+      document.getElementById("statAvg").textContent = avg == null ? "—" : String(avg);
+      document.getElementById("statThreshold").textContent = thr == null ? "—" : String(thr);
+      document.getElementById("statHundreds").textContent = hundreds == null ? "—" : String(hundreds);
+
+      const chart = document.getElementById("statsChart");
+      const safe = (v) => (v == null || !Number.isFinite(Number(v))) ? 0 : Number(v);
+      const dist = Array.isArray(distribution) ? distribution : [];
+      const bars = dist
+        .filter((d) => d && typeof d.short === "string")
+        .map((d, idx) => {
+          const colors = ["#a78bfa", "#7c3aed", "#4c1d95", "#5b21b6"];
+          return {
+            label: d.short,
+            value: safe(d.percent),
+            color: colors[idx % colors.length]
+          };
+        });
+
+      const baseY = 142;
+      const barW = 96;
+      const gap = 28;
+      const startX = 40;
+
+      let svg = "";
+      svg += `<rect x="0" y="0" width="560" height="170" fill="#ffffff"/>`;
+      svg += `<path d="M40 ${baseY} H520" stroke="#e5e7eb" stroke-width="2"/>`;
+      const max = Math.max(...bars.map((b) => b.value), 1);
+      const h = (v) => Math.round((v / max) * 110);
+
+      bars.forEach((b, idx) => {
+        const x = startX + idx * (barW + gap);
+        const bh = h(b.value);
+        const y = baseY - bh;
+        svg += `<rect x="${x}" y="${y}" width="${barW}" height="${bh}" rx="14" fill="${b.color}" opacity="0.92"/>`;
+        svg += `<text x="${x + barW/2}" y="${baseY + 18}" text-anchor="middle" font-size="12" fill="#6b7280" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Inter,Arial,sans-serif">${b.label}</text>`;
+        const labelValue = b.value ? (String(b.value) + "%") : "—";
+        svg += `<text x="${x + barW/2}" y="${y - 8}" text-anchor="middle" font-size="12" fill="#1f2937" font-weight="700" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Inter,Arial,sans-serif">${labelValue}</text>`;
+      });
+      chart.innerHTML = svg;
+    }
+
+    function renderExam(cfg) {
+      document.getElementById("examMain").textContent = cfg.exam && cfg.exam.main ? formatDateRu(cfg.exam.main) : "—";
+      document.getElementById("examReserve").textContent = cfg.exam && cfg.exam.reserve ? formatDateRu(cfg.exam.reserve) : "—";
+      document.getElementById("examDuration").textContent = cfg.exam && cfg.exam.durationText ? cfg.exam.durationText : "—";
+
+      const d = cfg.exam && cfg.exam.main ? daysUntil(cfg.exam.main) : null;
+      const cd = document.getElementById("examCountdown");
+      const hint = document.getElementById("examCountdownHint");
+      if (d == null) {
+        cd.textContent = "До экзамена осталось: —";
+        hint.textContent = "Если даты ещё не заполнены — добавим их позже.";
+        return;
+      }
+      const word = (n) => {
+        const a = Math.abs(n) % 100;
+        const b = a % 10;
+        if (a >= 11 && a <= 19) return "дней";
+        if (b === 1) return "день";
+        if (b >= 2 && b <= 4) return "дня";
+        return "дней";
+      };
+      cd.textContent = `До экзамена осталось: ${d} ${word(d)}`;
+      hint.textContent = d >= 0 ? "Можно выбрать номер и начать прямо сейчас." : "Экзамен уже прошёл — можно готовиться к следующему.";
+    }
+
+    function boot() {
+      const cfg = getConfig();
+      document.title = `${cfg.displayName} — 100‑балльный банк`;
+      document.getElementById("pillExamType").textContent = examType;
+      document.getElementById("pillSubject").textContent = cfg.displayName;
+      document.getElementById("subjectTitle").textContent = cfg.displayName;
+
+      const startHref = buildFiltersUrl({});
+      document.getElementById("btnStart").href = startHref;
+      document.getElementById("btnStart2").href = startHref;
+
+      renderExam(cfg);
+      renderMistakes(cfg);
+      renderVariants(cfg);
+      renderStats(cfg);
+    }
+
+    boot();
+  </script>
+</body>
+</html>
+

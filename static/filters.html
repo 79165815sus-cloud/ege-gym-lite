@@ -291,6 +291,7 @@
 
   <script>
     let filtersData = null;
+    const initialParams = new URLSearchParams(window.location.search);
 
     async function loadFilters() {
       const res = await fetch("/api/filters");
@@ -312,9 +313,38 @@
         "Биология"
       ]);
       const subjectSelect = document.getElementById("subject");
-      subjectSelect.value = "Математика профиль";
+      // Apply initial values from URL (?examType=ЕГЭ|ОГЭ&subject=...&examTaskNumber=...&count=...).
+      const examTypeParam = (initialParams.get("examType") || "").trim();
+      const subjectParam = (initialParams.get("subject") || "").trim();
+      const examTaskParam = (initialParams.get("examTaskNumber") || "").trim();
+      const countParam = (initialParams.get("count") || "").trim();
+
+      if (examTypeParam === "ЕГЭ") {
+        document.getElementById("examSwitch").checked = true;
+      } else if (examTypeParam === "ОГЭ") {
+        document.getElementById("examSwitch").checked = false;
+      }
+      updateExamTypeText();
+
+      if (subjectParam && [...subjectSelect.options].some((opt) => opt.value === subjectParam)) {
+        subjectSelect.value = subjectParam;
+      } else {
+        subjectSelect.value = "Математика профиль";
+      }
       updateExamTaskOptions();
+      if (examTaskParam) {
+        const examSelect = document.getElementById("examTaskNumber");
+        if ([...examSelect.options].some((opt) => opt.value === examTaskParam)) {
+          examSelect.value = examTaskParam;
+        }
+      }
       updateTaskCountOptions();
+      if (countParam) {
+        const countSelect = document.getElementById("taskCount");
+        if ([...countSelect.options].some((opt) => opt.value === countParam)) {
+          countSelect.value = countParam;
+        }
+      }
     }
 
     function fillSelect(id, items) {
@@ -448,7 +478,7 @@
         if (taskCount) params.set("count", taskCount);
       }
 
-      const url = params.toString() ? "/?" + params.toString() : "/";
+      const url = params.toString() ? "/index.html?" + params.toString() : "/index.html";
       window.location.href = url;
     }
 
