@@ -13,7 +13,8 @@ go run main.go
 
 ## Основные страницы
 
-- `http://localhost:8080/` — «Качалка» (основной режим).
+- `http://localhost:8080/` — лендинг.
+- `http://localhost:8080/train` — «Качалка» (основной режим).
 - `http://localhost:8080/filters.html` — план на тренировку.
 - `http://localhost:8080/admin.html` — админка задач.
 - `http://localhost:8080/admin-analytics.html` — аналитика (админка).

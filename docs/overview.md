@@ -42,7 +42,7 @@
   - `GET /api/analytics` — выгрузка аналитики
 - Статика: `static/` (страницы и ресурсы)
 
-### Клиент (static/index.html)
+### Клиент (static/index.html, маршрут `/train`)
 - Режим «Отдельные задания»:
   - `count` задает количество
   - случайная выдача через `/api/task`
@@ -81,7 +81,7 @@
   - `tools/pdf_to_tasks.py` — парсер PDF
 
 ### UI/UX
-- `static/index.html` — основная «Качалка», модалки, логика прохождения.
+- `static/index.html` — основная «Качалка» (открывается по `/train`), модалки, логика прохождения.
 - `static/filters.html` — план тренировки и фильтры.
 - `static/admin.html` — админка задач.
 - `static/admin-analytics.html` — аналитика.

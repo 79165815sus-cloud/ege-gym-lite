@@ -424,7 +424,7 @@
 
     <footer>
       <div>© 100‑балльный банк — банк заданий ЕГЭ/ОГЭ</div>
-      <div><a class="link" href="/index.html">Тренировка</a></div>
+      <div><a class="link" href="/train">Тренировка</a></div>
     </footer>
   </div>
 
@@ -520,7 +520,7 @@
       if (opts && opts.sequence) p.set("sequence", "1");
       if (opts && opts.variant) p.set("variant", String(opts.variant));
       if (opts && opts.startIndex) p.set("startIndex", String(opts.startIndex));
-      return "/index.html?" + p.toString();
+      return "/train?" + p.toString();
     }
 
     function buildFiltersUrl(opts) {

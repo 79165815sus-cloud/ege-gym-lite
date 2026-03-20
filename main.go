@@ -1701,6 +1701,18 @@ func main() {
 
 	// статика
 	fs := http.FileServer(http.Dir("./static"))
+	http.HandleFunc("/train", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, "./static/index.html")
+	})
+	http.HandleFunc("/train/", func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/train/" {
+			http.NotFound(w, r)
+			return
+		}
+		u := *r.URL
+		u.Path = "/train"
+		http.Redirect(w, r, u.String(), http.StatusPermanentRedirect)
+	})
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/" {
 			http.ServeFile(w, r, "./static/landing.html")
