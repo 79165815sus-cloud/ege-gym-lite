@@ -230,6 +230,16 @@
       font-weight: 800;
       letter-spacing: 0.02em;
       text-transform: uppercase;
+      display:flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .section-count{
+      font-variant-numeric: tabular-nums;
+      color: var(--muted);
+      font-weight: 800;
+      letter-spacing: 0.01em;
+      text-transform: none;
     }
     .plan-row{
       display: grid;
@@ -251,8 +261,8 @@
       width: 34px;
       height: 34px;
       border-radius: 999px;
-      border: 1px solid var(--border);
-      background: #fff;
+      border: 1px solid #d8b4fe;
+      background: #f5f3ff;
       color: var(--accent);
       cursor: pointer;
       display:flex;
@@ -263,12 +273,13 @@
       transition: background .15s ease, transform .05s ease;
       flex-shrink: 0;
     }
-    .qty-btn:hover{ background:#f5f3ff; }
+    .qty-btn:hover{ background:#ede9fe; }
     .qty-btn:active{ transform: translateY(1px); }
     .qty-btn:disabled{
       opacity: 0.45;
       cursor: not-allowed;
-      background: #fff;
+      background: #f9fafb;
+      border-color: rgba(229,231,235,0.9);
     }
     .qty-val{
       width: 44px;
@@ -363,7 +374,6 @@
       </div>
 
       <div class="field hidden" id="mathPlanField">
-        <label>Сколько задач по каждому номеру</label>
         <div class="plan-list" id="mathPlanList"></div>
         <div class="total">
           <span>Итого задач: <strong id="mathTotal">0</strong></span>
@@ -411,6 +421,7 @@
     const initialParams = new URLSearchParams(window.location.search);
     let mathCache = null; // { examType, subject, tasks: TaskPublic[] }
     let mathCounts = {}; // { [examTaskNumber]: number }
+    let mathThemeCounts = {}; // { [themeName]: number }
     const mathTopicsByNumber = {
       1: "Планиметрия",
       2: "Векторы",
@@ -432,6 +443,18 @@
       18: "Задача с параметром",
       19: "Числа и их свойства"
     };
+    const mathPlanimetryThemes = [
+      { name: "Равнобедренные и равносторонние треугольники", max: 47 },
+      { name: "Прямоугольные треугольники", max: 54 },
+      { name: "Трапеция", max: 30 },
+      { name: "Параллелограммы", max: 57 },
+      { name: "Центральные и вписанные углы", max: 52 },
+      { name: "Задачи на хорды, касательные и секущие", max: 32 },
+      { name: "Вписанная окружность", max: 45 },
+      { name: "Описанная окружность", max: 72 },
+      { name: "Треугольники общего вида", max: 51 }
+    ];
+    const mathPlanimetryThemeSet = new Set(mathPlanimetryThemes.map((t) => t.name));
     const mathThemeCatalog = [
       {
         group: "Планиметрия первой части",
@@ -665,6 +688,11 @@
       return Array.from({ length: 19 }, (_, i) => i + 1);
     }
 
+    function isPlanimetryThemeSelected(theme) {
+      const t = String(theme || "").trim();
+      return t ? mathPlanimetryThemeSet.has(t) : false;
+    }
+
     async function loadFilters() {
       const res = await fetch("/api/filters");
       if (!res.ok) return;
@@ -888,6 +916,112 @@
       const visibleSet = new Set(numbers.map((n) => String(n)));
       const allNums = Array.from({ length: 19 }, (_, i) => i + 1);
 
+      // Special view for Planimetry subthemes (№1).
+      if (numbers.length === 1 && numbers[0] === 1 && isPlanimetryThemeSelected(subtopic)) {
+        const availableTotal = mathPlanimetryThemes.reduce((s, t) => s + t.max, 0);
+        const poolMax = (byNum.get(1) || []).length;
+
+        // Clamp theme counts.
+        const nextThemeCounts = { ...mathThemeCounts };
+        mathPlanimetryThemes.forEach((t) => {
+          const raw = nextThemeCounts[t.name];
+          const v = Number(raw);
+          nextThemeCounts[t.name] = Number.isFinite(v) ? Math.max(0, Math.min(v, t.max)) : 0;
+        });
+        mathThemeCounts = nextThemeCounts;
+
+        const pickedTotal = mathPlanimetryThemes.reduce((s, t) => s + (Number(mathThemeCounts[t.name] || 0) || 0), 0);
+
+        // Keep overall counts for trainer (trainer samples by examTaskNumber).
+        const nextCounts = { ...mathCounts };
+        allNums.forEach((n) => { nextCounts[String(n)] = 0; });
+        nextCounts["1"] = pickedTotal;
+        mathCounts = nextCounts;
+
+        list.innerHTML = "";
+        list.innerHTML += `
+          <div class="plan-head">
+            <div><strong>Номер задания в экзамене</strong></div>
+            <div><strong>Количество</strong></div>
+          </div>
+        `;
+
+        const sec = document.createElement("div");
+        sec.className = "plan-section";
+        sec.innerHTML = `<span>1 линия</span><span class="section-count">${pickedTotal} / ${availableTotal}</span>`;
+        list.appendChild(sec);
+
+        function stepTheme(op, themeName) {
+          const t = mathPlanimetryThemes.find((x) => x.name === themeName);
+          if (!t) return;
+          const cur = Number(mathThemeCounts[themeName] || 0);
+          const next = op === "inc" ? Math.min(cur + 1, t.max) : Math.max(cur - 1, 0);
+          if (next === cur) return;
+          mathThemeCounts[themeName] = next;
+          renderMathPlanList(cache);
+        }
+
+        function bindHold(btn, themeName) {
+          const op = btn.getAttribute("data-op");
+          if (!op) return;
+          let t0 = null;
+          let interval = null;
+          let stopped = false;
+          const stop = () => {
+            stopped = true;
+            if (t0) window.clearTimeout(t0);
+            if (interval) window.clearInterval(interval);
+            t0 = null;
+            interval = null;
+          };
+          btn.addEventListener("pointerdown", (e) => {
+            if (btn.disabled) return;
+            stopped = false;
+            btn.setPointerCapture?.(e.pointerId);
+            stepTheme(op, themeName);
+            t0 = window.setTimeout(() => {
+              if (stopped) return;
+              interval = window.setInterval(() => stepTheme(op, themeName), 120);
+            }, 260);
+          });
+          btn.addEventListener("pointerup", stop);
+          btn.addEventListener("pointercancel", stop);
+          btn.addEventListener("pointerleave", stop);
+          window.addEventListener("blur", stop);
+        }
+
+        mathPlanimetryThemes.forEach((t) => {
+          const val = Number(mathThemeCounts[t.name] || 0) || 0;
+          const row = document.createElement("div");
+          row.className = "plan-row";
+          row.innerHTML = `
+            <div class="topic">
+              <div class="meta">Раздел: Планиметрия первой части</div>
+              <div class="name">${t.name}</div>
+            </div>
+            <div class="qty">
+              <button class="qty-btn" data-op="dec" ${val <= 0 ? "disabled" : ""} aria-label="Уменьшить для темы ${t.name}" title="Уменьшить">−</button>
+              <div class="qty-val" aria-label="Количество задач для темы ${t.name}">${val} / ${t.max}</div>
+              <button class="qty-btn" data-op="inc" ${val >= t.max ? "disabled" : ""} aria-label="Увеличить для темы ${t.name}" title="Увеличить">+</button>
+            </div>
+          `;
+          const btns = row.querySelectorAll("button.qty-btn");
+          if (btns && btns.length === 2) {
+            bindHold(btns[0], t.name);
+            bindHold(btns[1], t.name);
+          }
+          list.appendChild(row);
+        });
+
+        totalEl.textContent = String(pickedTotal);
+        if (poolMax > 0 && pickedTotal > poolMax) {
+          hintEl.textContent = `В базе сейчас доступно ${poolMax} задач №1 — план начнётся, но будет короче выбранного.`;
+        } else {
+          hintEl.textContent = pickedTotal > 0 ? "План будет собран случайно из задач №1." : "Выбери хотя бы 1 задачу.";
+        }
+        return;
+      }
+
       // Normalize counts within available limits.
       const nextCounts = { ...mathCounts };
       allNums.forEach((n) => {
@@ -901,7 +1035,7 @@
       list.innerHTML = "";
       list.innerHTML += `
         <div class="plan-head">
-          <div><strong>Тема</strong></div>
+          <div><strong>Номер задания в экзамене</strong></div>
           <div><strong>Количество</strong></div>
         </div>
       `;
@@ -931,9 +1065,9 @@
             <div class="meta">${meta}</div>
           </div>
           <div class="qty">
-            <button class="qty-btn" data-op="dec" data-num="${n}" ${val <= 0 ? "disabled" : ""} aria-label="Уменьшить количество для номера ${n}">−</button>
+            <button class="qty-btn" data-op="dec" data-num="${n}" ${val <= 0 ? "disabled" : ""} aria-label="Уменьшить количество для номера ${n}" title="Уменьшить">−</button>
             <div class="qty-val" aria-label="Количество задач для номера ${n}">${val}</div>
-            <button class="qty-btn" data-op="inc" data-num="${n}" ${val >= max ? "disabled" : ""} aria-label="Увеличить количество для номера ${n}">+</button>
+            <button class="qty-btn" data-op="inc" data-num="${n}" ${val >= max ? "disabled" : ""} aria-label="Увеличить количество для номера ${n}" title="Увеличить">+</button>
           </div>
         `;
         list.appendChild(row);
@@ -950,20 +1084,54 @@
         numbers.filter((n) => n >= 13 && n <= 19).forEach((n) => addRow(n));
       }
 
-      // Event delegation for +/- buttons.
-      list.querySelectorAll("button.qty-btn").forEach((btn) => {
-        btn.addEventListener("click", () => {
-          const num = Number(btn.getAttribute("data-num") || "0");
-          const op = btn.getAttribute("data-op");
-          if (!Number.isFinite(num) || num <= 0) return;
-          const max = (byNum.get(num) || []).length;
-          const key = String(num);
-          const cur = Number(mathCounts[key] || 0);
-          const next = op === "inc" ? Math.min(cur + 1, max) : Math.max(cur - 1, 0);
-          mathCounts[key] = next;
-          renderMathPlanList(cache);
+      // "Live" +/-: click or press-and-hold.
+      function step(op, num) {
+        if (!Number.isFinite(num) || num <= 0) return;
+        if (!visibleSet.has(String(num))) return;
+        const max = (byNum.get(num) || []).length;
+        const key = String(num);
+        const cur = Number(mathCounts[key] || 0);
+        const next = op === "inc" ? Math.min(cur + 1, max) : Math.max(cur - 1, 0);
+        if (next === cur) return;
+        mathCounts[key] = next;
+        renderMathPlanList(cache);
+      }
+
+      function bindHold(btn) {
+        const num = Number(btn.getAttribute("data-num") || "0");
+        const op = btn.getAttribute("data-op");
+        if (!Number.isFinite(num) || num <= 0) return;
+        if (!op) return;
+
+        let t0 = null;
+        let interval = null;
+        let stopped = false;
+        const stop = () => {
+          stopped = true;
+          if (t0) window.clearTimeout(t0);
+          if (interval) window.clearInterval(interval);
+          t0 = null;
+          interval = null;
+        };
+
+        btn.addEventListener("pointerdown", (e) => {
+          if (btn.disabled) return;
+          stopped = false;
+          btn.setPointerCapture?.(e.pointerId);
+          step(op, num);
+          // start repeating after a short delay
+          t0 = window.setTimeout(() => {
+            if (stopped) return;
+            interval = window.setInterval(() => step(op, num), 120);
+          }, 260);
         });
-      });
+        btn.addEventListener("pointerup", stop);
+        btn.addEventListener("pointercancel", stop);
+        btn.addEventListener("pointerleave", stop);
+        window.addEventListener("blur", stop);
+      }
+
+      list.querySelectorAll("button.qty-btn").forEach((btn) => bindHold(btn));
 
       // Totals
       const total = numbers.reduce((sum, n) => sum + (Number(mathCounts[String(n)] || 0) || 0), 0);
