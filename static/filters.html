@@ -624,6 +624,46 @@
         ]
       }
     ];
+    const mathThemeToExamNumber = (() => {
+      const groupToNum = {
+        "Планиметрия первой части": 1,
+        "Векторы и координатная плоскость": 2,
+        "Стереометрия первой части": 3,
+        "Начала теории вероятностей": 4,
+        "Вероятности сложных событий": 5,
+        "Уравнения первой части": 6,
+        "Вычисления и преобразования": 7,
+        "Производная и первообразная": 8,
+        "Задачи прикладного характера": 9,
+        "Текстовые задачи": 10,
+        "Графики функций": 11,
+        "Наибольшие/наименьшие значения и точки экстремума функций": 12,
+        "Уравнения второй части": 13,
+        "Стереометрия второй части": 14,
+        "Неравенства": 15,
+        "Экономические задачи": 16,
+        "Планиметрия второй части": 17,
+        "Задачи с параметром": 18,
+        "Задачи на теорию чисел": 19
+      };
+      const out = {};
+      mathThemeCatalog.forEach((g) => {
+        const n = groupToNum[g.group];
+        if (!n) return;
+        (g.items || []).forEach((name) => {
+          out[String(name)] = n;
+        });
+      });
+      return out;
+    })();
+
+    function mathNumbersForTheme(theme) {
+      const t = String(theme || "").trim();
+      if (!t) return Array.from({ length: 19 }, (_, i) => i + 1);
+      const n = mathThemeToExamNumber[t];
+      if (Number.isFinite(n) && n >= 1 && n <= 19) return [n];
+      return Array.from({ length: 19 }, (_, i) => i + 1);
+    }
 
     async function loadFilters() {
       const res = await fetch("/api/filters");
@@ -832,15 +872,9 @@
 
       const subtopic = (document.getElementById("subtopic").value || "").trim();
       const baseTasks = (cache.tasks || []);
-      let tasks = baseTasks.filter((t) => {
-        if (!subtopic) return true;
-        return String(t.subtopic || "").trim() === subtopic;
-      });
-      const subtopicUnavailable = Boolean(subtopic) && baseTasks.length > 0 && tasks.length === 0;
-      if (subtopicUnavailable) {
-        // Если база не размечена под эту тему — не ломаем план.
-        tasks = baseTasks;
-      }
+      // Темы в UI пока не совпадают с разметкой задач в базе (subtopic),
+      // поэтому используем тему, чтобы сузить список НОМЕРОВ, а не фильтровать сами задачи.
+      const tasks = baseTasks;
 
       const byNum = new Map();
       tasks.forEach((t) => {
@@ -850,13 +884,14 @@
         byNum.get(n).push(t);
       });
 
-      // Always show 1..19 for math profile (even if some are not present in the current subtopic).
-      const numbers = Array.from({ length: 19 }, (_, i) => i + 1);
+      const numbers = mathNumbersForTheme(subtopic);
+      const visibleSet = new Set(numbers.map((n) => String(n)));
+      const allNums = Array.from({ length: 19 }, (_, i) => i + 1);
 
       // Normalize counts within available limits.
       const nextCounts = { ...mathCounts };
-      numbers.forEach((n) => {
-        const max = (byNum.get(n) || []).length;
+      allNums.forEach((n) => {
+        const max = visibleSet.has(String(n)) ? (byNum.get(n) || []).length : 0;
         const raw = nextCounts[String(n)];
         const val = Number(raw);
         nextCounts[String(n)] = Number.isFinite(val) ? Math.max(0, Math.min(val, max)) : 0;
@@ -888,7 +923,7 @@
         row.className = "plan-row";
 
         const topicName = mathTopicsByNumber[n] || "Тема";
-        const meta = max > 0 ? `Доступно: ${max}` : "Нет задач по выбранной подтеме";
+        const meta = max > 0 ? `Доступно: ${max}` : (subtopic ? "Нет задач по выбранной теме" : "Нет задач");
 
         row.innerHTML = `
           <div class="topic">
@@ -904,10 +939,16 @@
         list.appendChild(row);
       }
 
-      addSection("Краткий ответ");
-      for (let n = 1; n <= 12; n += 1) addRow(n);
-      addSection("Развернутый ответ");
-      for (let n = 13; n <= 19; n += 1) addRow(n);
+      const hasShort = numbers.some((n) => n >= 1 && n <= 12);
+      const hasLong = numbers.some((n) => n >= 13 && n <= 19);
+      if (hasShort) {
+        addSection("Краткий ответ");
+        numbers.filter((n) => n >= 1 && n <= 12).forEach((n) => addRow(n));
+      }
+      if (hasLong) {
+        addSection("Развернутый ответ");
+        numbers.filter((n) => n >= 13 && n <= 19).forEach((n) => addRow(n));
+      }
 
       // Event delegation for +/- buttons.
       list.querySelectorAll("button.qty-btn").forEach((btn) => {
@@ -927,13 +968,7 @@
       // Totals
       const total = numbers.reduce((sum, n) => sum + (Number(mathCounts[String(n)] || 0) || 0), 0);
       totalEl.textContent = String(total);
-      if (subtopicUnavailable) {
-        hintEl.textContent = "Пока нет задач с разметкой под выбранную тему — можно выбирать количество по номерам.";
-      } else if (byNum.size === 0 && subtopic) {
-        hintEl.textContent = "В этой теме пока нет задач. Выбери другую тему или «Любая».";
-      } else {
-        hintEl.textContent = total > 0 ? "План будет собран случайно из доступных задач." : "Выбери хотя бы 1 задачу.";
-      }
+      hintEl.textContent = total > 0 ? "План будет собран случайно из доступных задач." : "Выбери хотя бы 1 задачу.";
     }
 
     async function ensureMathUI() {
@@ -1057,14 +1092,7 @@
       const cache = await ensureMathCache();
       if (!cache) return;
 
-      const baseTasks = (cache.tasks || []);
-      let tasks = baseTasks.filter((t) => {
-        if (!subtopic) return true;
-        return String(t.subtopic || "").trim() === subtopic;
-      });
-      if (subtopic && baseTasks.length > 0 && tasks.length === 0) {
-        tasks = baseTasks; // fallback
-      }
+      const tasks = (cache.tasks || []);
       const byNum = new Map();
       tasks.forEach((t) => {
         const n = Number(t.examTaskNumber);
@@ -1074,10 +1102,12 @@
       });
 
       let selected = [];
+      const allowed = new Set(mathNumbersForTheme(subtopic).map((n) => String(n)));
       Object.keys(mathCounts).forEach((k) => {
         const n = Number(k);
         const want = Number(mathCounts[k] || 0);
         if (!Number.isFinite(n) || !Number.isFinite(want) || want <= 0) return;
+        if (!allowed.has(String(n))) return;
         const pool = byNum.get(n) || [];
         selected = selected.concat(sampleN(pool, want));
       });
