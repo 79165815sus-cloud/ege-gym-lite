@@ -210,12 +210,30 @@
     .plan-list{
       border: 1px solid var(--border);
       border-radius: 12px;
-      padding: 10px;
+      padding: 10px 10px 2px;
       background: #fff;
+    }
+    .plan-head{
+      display:grid;
+      grid-template-columns: 1fr 160px;
+      gap: 10px;
+      padding: 6px 6px 10px;
+      color: var(--muted);
+      font-size: 12px;
+      border-bottom: 1px solid rgba(229,231,235,0.7);
+      margin-bottom: 4px;
+    }
+    .plan-section{
+      padding: 10px 6px 6px;
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
     }
     .plan-row{
       display: grid;
-      grid-template-columns: 70px 1fr 150px;
+      grid-template-columns: 1fr 160px;
       gap: 10px;
       align-items: center;
       padding: 8px 6px;
@@ -224,13 +242,58 @@
     .plan-row:last-child{ border-bottom: none; }
     .plan-row strong{ color: var(--accent); }
     .muted{ color: var(--muted); font-size: 12px; }
-    .plan-row input{
-      width: 100%;
-      padding: 10px 12px;
-      border-radius: 10px;
+    .qty{
+      display:flex;
+      align-items:center;
+      gap: 8px;
+    }
+    .qty-btn{
+      width: 34px;
+      height: 34px;
+      border-radius: 999px;
       border: 1px solid var(--border);
-      font-size: 14px;
       background: #fff;
+      color: var(--accent);
+      cursor: pointer;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size: 18px;
+      line-height: 1;
+      transition: background .15s ease, transform .05s ease;
+      flex-shrink: 0;
+    }
+    .qty-btn:hover{ background:#f5f3ff; }
+    .qty-btn:active{ transform: translateY(1px); }
+    .qty-btn:disabled{
+      opacity: 0.45;
+      cursor: not-allowed;
+      background: #fff;
+    }
+    .qty-val{
+      width: 44px;
+      text-align:center;
+      padding: 8px 10px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: #fff;
+      font-weight: 800;
+      color: #111827;
+      font-variant-numeric: tabular-nums;
+    }
+    .topic{
+      display:flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .topic .name{
+      font-size: 14px;
+      color: #111827;
+      font-weight: 700;
+    }
+    .topic .meta{
+      font-size: 12px;
+      color: var(--muted);
     }
     .total{
       margin-top: 10px;
@@ -292,11 +355,11 @@
       </div>
 
       <div class="field hidden" id="subtopicField">
-        <label for="subtopic">Подтема</label>
+        <label for="subtopic">Тема</label>
         <select id="subtopic">
           <option value="">Любая</option>
         </select>
-        <div class="muted" style="margin-top:6px;">Выбери подтему — и настроим тренировки по номерам внутри неё.</div>
+        <div class="muted" style="margin-top:6px;">Выбери тему — и настроим тренировки по номерам внутри неё.</div>
       </div>
 
       <div class="field hidden" id="mathPlanField">
@@ -348,6 +411,219 @@
     const initialParams = new URLSearchParams(window.location.search);
     let mathCache = null; // { examType, subject, tasks: TaskPublic[] }
     let mathCounts = {}; // { [examTaskNumber]: number }
+    const mathTopicsByNumber = {
+      1: "Планиметрия",
+      2: "Векторы",
+      3: "Стереометрия",
+      4: "Начала теории вероятностей",
+      5: "Вероятности сложных событий",
+      6: "Простейшие уравнения",
+      7: "Вычисления и преобразования",
+      8: "Производная и первообразная",
+      9: "Задачи с прикладным содержанием",
+      10: "Текстовые задачи",
+      11: "Графики функций",
+      12: "Наибольшее и наименьшее значение функций",
+      13: "Уравнения",
+      14: "Стереометрическая задача",
+      15: "Неравенства",
+      16: "Финансовая математика",
+      17: "Планиметрическая задача",
+      18: "Задача с параметром",
+      19: "Числа и их свойства"
+    };
+    const mathThemeCatalog = [
+      {
+        group: "Планиметрия первой части",
+        items: [
+          "Равнобедренные и равносторонние треугольники",
+          "Прямоугольные треугольники",
+          "Трапеция",
+          "Параллелограммы",
+          "Центральные и вписанные углы",
+          "Задачи на хорды, касательные и секущие",
+          "Вписанная окружность",
+          "Описанная окружность",
+          "Треугольники общего вида"
+        ]
+      },
+      {
+        group: "Векторы и координатная плоскость",
+        items: [
+          "Скалярное произведение векторов",
+          "Сумма и разность векторов",
+          "Угол между векторами"
+        ]
+      },
+      {
+        group: "Стереометрия первой части",
+        items: [
+          "Призмы",
+          "Тела вращения",
+          "Комбинации фигур",
+          "Пирамиды",
+          "Составные многогранники"
+        ]
+      },
+      {
+        group: "Начала теории вероятностей",
+        items: [
+          "Классическое определение вероятности"
+        ]
+      },
+      {
+        group: "Вероятности сложных событий",
+        items: [
+          "Теоремы о вероятностях событий"
+        ]
+      },
+      {
+        group: "Уравнения первой части",
+        items: [
+          "Линейные, квадратные и кубические уравнения",
+          "Рациональные уравнения",
+          "Иррациональные уравнения",
+          "Показательные уравнения",
+          "Логарифмические уравнения",
+          "Тригонометрические уравнения"
+        ]
+      },
+      {
+        group: "Вычисления и преобразования",
+        items: [
+          "Числовые и буквенные рациональные выражения",
+          "Числовые и буквенные иррациональные выражения",
+          "Числовые и буквенные логарифмические выражения",
+          "Числовые и буквенные выражения со степенями",
+          "Преобразование и вычисление тригонометрических выражений"
+        ]
+      },
+      {
+        group: "Производная и первообразная",
+        items: [
+          "Физический смысл производной",
+          "Геометрический смысл производной",
+          "Исследование функций с помощью производной",
+          "Первообразная"
+        ]
+      },
+      {
+        group: "Задачи прикладного характера",
+        items: [
+          "Обычные задания на работу с заданными формулами",
+          "Задания с подвохом"
+        ]
+      },
+      {
+        group: "Текстовые задачи",
+        items: [
+          "Движение по прямой",
+          "Совместное движение",
+          "Относительное движение",
+          "Движение по воде",
+          "Движение по окружности",
+          "Производительность труда",
+          "Арифметическая прогрессия",
+          "Сплавы и смеси, проценты"
+        ]
+      },
+      {
+        group: "Графики функций",
+        items: [
+          "Линейная функция",
+          "Квадратичная функция",
+          "Гипербола",
+          "Показательные и логарифмические функции",
+          "Тригонометрические функции",
+          "Функции с модулями",
+          "Комбинированные задачи"
+        ]
+      },
+      {
+        group: "Наибольшие/наименьшие значения и точки экстремума функций",
+        items: [
+          "Нахождение точек экстремума",
+          "Нахождение наибольших и наименьших значений функции"
+        ]
+      },
+      {
+        group: "Уравнения второй части",
+        items: [
+          "Рациональные уравнения",
+          "Иррациональные уравнения",
+          "Показательные уравнения",
+          "Логарифмические уравнения",
+          "Тригонометрические уравнения. Разложение на множители",
+          "Тригонометрические уравнения. Сумма/разность аргументов или функций",
+          "Тригонометрические уравнения. Прототипы квадратных, кубических и других уравнений",
+          "Тригонометрические уравнения. Однородные уравнения",
+          "Тригонометрические уравнения. Исследование ограничений",
+          "Смешанные прототипы"
+        ]
+      },
+      {
+        group: "Стереометрия второй части",
+        items: [
+          "Углы между прямой и плоскостью",
+          "Углы между скрещивающимися прямыми",
+          "Углы между плоскостями",
+          "Расстояние от точки до прямой и до плоскости",
+          "Расстояние между прямыми и плоскостями",
+          "Сечения",
+          "Объемы",
+          "Тела вращения"
+        ]
+      },
+      {
+        group: "Неравенства",
+        items: [
+          "Неравенства с модулем",
+          "Рациональные неравенства",
+          "Показательные неравенства",
+          "Логарифмические неравенства",
+          "Логарифмические неравенства по переменному основанию",
+          "Смешанные неравенства"
+        ]
+      },
+      {
+        group: "Экономические задачи",
+        items: [
+          "Вклады",
+          "Кредиты",
+          "Оптимизация"
+        ]
+      },
+      {
+        group: "Планиметрия второй части",
+        items: [
+          "Многоугольники и их свойства",
+          "Окружности и системы окружностей",
+          "Окружности и треугольники",
+          "Окружности и четырехугольники"
+        ]
+      },
+      {
+        group: "Задачи с параметром",
+        items: [
+          "Уравнения с параметром",
+          "Неравенства с параметром",
+          "Расположение корней квадратного трехчлена",
+          "Системы с параметром",
+          "Уравнение окружности",
+          "Решение в плоскости xОa",
+          "Исследование функций, зависящих от параметра"
+        ]
+      },
+      {
+        group: "Задачи на теорию чисел",
+        items: [
+          "Свойства чисел",
+          "Числовые наборы на карточках/досках",
+          "Сюжетные задачи",
+          "Последовательности и прогрессии"
+        ]
+      }
+    ];
 
     async function loadFilters() {
       const res = await fetch("/api/filters");
@@ -532,21 +808,16 @@
       const prev = select.value;
       select.innerHTML = "<option value=\"\">Любая</option>";
 
-      const seen = new Set();
-      const items = [];
-      (cache.tasks || []).forEach((t) => {
-        const s = (t && t.subtopic ? String(t.subtopic) : "").trim();
-        if (!s) return;
-        if (seen.has(s)) return;
-        seen.add(s);
-        items.push(s);
-      });
-      items.sort((a, b) => a.localeCompare(b, "ru"));
-      items.forEach((s) => {
-        const opt = document.createElement("option");
-        opt.value = s;
-        opt.textContent = s;
-        select.appendChild(opt);
+      mathThemeCatalog.forEach((g) => {
+        const og = document.createElement("optgroup");
+        og.label = g.group;
+        (g.items || []).forEach((name) => {
+          const opt = document.createElement("option");
+          opt.value = name;
+          opt.textContent = name;
+          og.appendChild(opt);
+        });
+        select.appendChild(og);
       });
 
       if (prev && [...select.options].some((o) => o.value === prev)) {
@@ -560,10 +831,16 @@
       const hintEl = document.getElementById("mathHint");
 
       const subtopic = (document.getElementById("subtopic").value || "").trim();
-      const tasks = (cache.tasks || []).filter((t) => {
+      const baseTasks = (cache.tasks || []);
+      let tasks = baseTasks.filter((t) => {
         if (!subtopic) return true;
         return String(t.subtopic || "").trim() === subtopic;
       });
+      const subtopicUnavailable = Boolean(subtopic) && baseTasks.length > 0 && tasks.length === 0;
+      if (subtopicUnavailable) {
+        // Если база не размечена под эту тему — не ломаем план.
+        tasks = baseTasks;
+      }
 
       const byNum = new Map();
       tasks.forEach((t) => {
@@ -573,55 +850,90 @@
         byNum.get(n).push(t);
       });
 
-      const numbers = Array.from(byNum.keys()).sort((a, b) => a - b);
-      if (!numbers.length) {
-        list.innerHTML = "<div class=\"muted\">Нет задач под выбранную подтему.</div>";
-        totalEl.textContent = "0";
-        hintEl.textContent = "";
-        return;
-      }
+      // Always show 1..19 for math profile (even if some are not present in the current subtopic).
+      const numbers = Array.from({ length: 19 }, (_, i) => i + 1);
 
-      // Keep only relevant counts
-      const nextCounts = {};
+      // Normalize counts within available limits.
+      const nextCounts = { ...mathCounts };
       numbers.forEach((n) => {
-        const raw = mathCounts[String(n)];
-        const max = byNum.get(n).length;
+        const max = (byNum.get(n) || []).length;
+        const raw = nextCounts[String(n)];
         const val = Number(raw);
         nextCounts[String(n)] = Number.isFinite(val) ? Math.max(0, Math.min(val, max)) : 0;
       });
       mathCounts = nextCounts;
 
       list.innerHTML = "";
-      let total = 0;
-      numbers.forEach((n) => {
-        const max = byNum.get(n).length;
+      list.innerHTML += `
+        <div class="plan-head">
+          <div><strong>Тема</strong></div>
+          <div><strong>Количество</strong></div>
+        </div>
+      `;
+
+      function addSection(title) {
+        const el = document.createElement("div");
+        el.className = "plan-section";
+        el.textContent = title;
+        list.appendChild(el);
+      }
+
+      function addRow(n) {
+        const pool = byNum.get(n) || [];
+        const max = pool.length;
         const key = String(n);
         const val = mathCounts[key] || 0;
-        total += val;
 
         const row = document.createElement("div");
         row.className = "plan-row";
+
+        const topicName = mathTopicsByNumber[n] || "Тема";
+        const meta = max > 0 ? `Доступно: ${max}` : "Нет задач по выбранной подтеме";
+
         row.innerHTML = `
-          <div><strong>№${n}</strong></div>
-          <div class="muted">Доступно: ${max}</div>
-          <div><input type="number" inputmode="numeric" min="0" max="${max}" value="${val}" data-num="${n}" aria-label="Количество задач для номера ${n}"/></div>
+          <div class="topic">
+            <div class="name">${n}. ${topicName}</div>
+            <div class="meta">${meta}</div>
+          </div>
+          <div class="qty">
+            <button class="qty-btn" data-op="dec" data-num="${n}" ${val <= 0 ? "disabled" : ""} aria-label="Уменьшить количество для номера ${n}">−</button>
+            <div class="qty-val" aria-label="Количество задач для номера ${n}">${val}</div>
+            <button class="qty-btn" data-op="inc" data-num="${n}" ${val >= max ? "disabled" : ""} aria-label="Увеличить количество для номера ${n}">+</button>
+          </div>
         `;
         list.appendChild(row);
-      });
-      totalEl.textContent = String(total);
-      hintEl.textContent = total > 0 ? "План будет собран случайно из доступных задач." : "Выбери хотя бы 1 задачу.";
+      }
 
-      list.querySelectorAll("input[data-num]").forEach((inp) => {
-        inp.addEventListener("change", () => {
-          const num = inp.getAttribute("data-num");
-          const max = Number(inp.getAttribute("max") || "0");
-          const v = Number(inp.value);
-          const safe = Number.isFinite(v) ? Math.max(0, Math.min(v, max)) : 0;
-          inp.value = String(safe);
-          mathCounts[String(num)] = safe;
+      addSection("Краткий ответ");
+      for (let n = 1; n <= 12; n += 1) addRow(n);
+      addSection("Развернутый ответ");
+      for (let n = 13; n <= 19; n += 1) addRow(n);
+
+      // Event delegation for +/- buttons.
+      list.querySelectorAll("button.qty-btn").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const num = Number(btn.getAttribute("data-num") || "0");
+          const op = btn.getAttribute("data-op");
+          if (!Number.isFinite(num) || num <= 0) return;
+          const max = (byNum.get(num) || []).length;
+          const key = String(num);
+          const cur = Number(mathCounts[key] || 0);
+          const next = op === "inc" ? Math.min(cur + 1, max) : Math.max(cur - 1, 0);
+          mathCounts[key] = next;
           renderMathPlanList(cache);
         });
       });
+
+      // Totals
+      const total = numbers.reduce((sum, n) => sum + (Number(mathCounts[String(n)] || 0) || 0), 0);
+      totalEl.textContent = String(total);
+      if (subtopicUnavailable) {
+        hintEl.textContent = "Пока нет задач с разметкой под выбранную тему — можно выбирать количество по номерам.";
+      } else if (byNum.size === 0 && subtopic) {
+        hintEl.textContent = "В этой теме пока нет задач. Выбери другую тему или «Любая».";
+      } else {
+        hintEl.textContent = total > 0 ? "План будет собран случайно из доступных задач." : "Выбери хотя бы 1 задачу.";
+      }
     }
 
     async function ensureMathUI() {
@@ -745,10 +1057,14 @@
       const cache = await ensureMathCache();
       if (!cache) return;
 
-      const tasks = (cache.tasks || []).filter((t) => {
+      const baseTasks = (cache.tasks || []);
+      let tasks = baseTasks.filter((t) => {
         if (!subtopic) return true;
         return String(t.subtopic || "").trim() === subtopic;
       });
+      if (subtopic && baseTasks.length > 0 && tasks.length === 0) {
+        tasks = baseTasks; // fallback
+      }
       const byNum = new Map();
       tasks.forEach((t) => {
         const n = Number(t.examTaskNumber);
