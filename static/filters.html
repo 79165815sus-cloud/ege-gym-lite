@@ -1388,30 +1388,24 @@
     async function ensureMathUI() {
       const subject = document.getElementById("subject").value;
       const math = isMathSubject(subject);
+      const modeSwitch = document.getElementById("modeSwitch");
+      const isProbnik = Boolean(modeSwitch && modeSwitch.checked);
 
-      // Fields toggling
-      const modeField = document.getElementById("modeSwitch").closest(".field");
-      setHidden(modeField ? modeField.id : "", false); // no-op, keep safe
-
-      setHidden("subtopicField", !math);
-      setHidden("mathPlanField", !math);
+      // Math planner is only for "Отдельные задания".
+      setHidden("subtopicField", !(math && !isProbnik));
+      setHidden("mathPlanField", !(math && !isProbnik));
 
       // Hide old controls for math-only flow
       const examField = document.getElementById("examTaskNumber").closest(".field");
       if (examField) {
-        if (math) examField.classList.add("hidden");
+        if (math && !isProbnik) examField.classList.add("hidden");
         else examField.classList.remove("hidden");
       }
-      setHidden("taskCountField", math);
-      setHidden("variantField", true);
-      // Hide mode switch for math (to avoid confusion)
-      const modeSwitchField = document.getElementById("modeSwitch").closest(".field");
-      if (modeSwitchField) {
-        if (math) modeSwitchField.classList.add("hidden");
-        else modeSwitchField.classList.remove("hidden");
-      }
+      setHidden("taskCountField", math && !isProbnik);
+      // Variant is used in "Пробники" mode (including math).
+      setHidden("variantField", !isProbnik);
 
-      if (!math) return;
+      if (!math || isProbnik) return;
       const cache = await ensureMathCache();
       if (!cache) return;
       renderMathSubtopics(cache);
@@ -1479,7 +1473,7 @@
       const variantNumber = document.getElementById("variantNumber").value;
 
       // New flow: Math профиль → подтема → по каждому номеру выбрать кол-во задач.
-      if (isMathSubject(subject)) {
+      if (isMathSubject(subject) && !modeSwitch.checked) {
         startMathPlan();
         return;
       }
@@ -1622,6 +1616,7 @@
     document.getElementById("modeSwitch").addEventListener("change", () => {
       updateModeText();
       updateModeVisibility();
+      ensureMathUI();
     });
     document.getElementById("subtopic").addEventListener("change", () => {
       if (mathCache) renderMathPlanList(mathCache);
