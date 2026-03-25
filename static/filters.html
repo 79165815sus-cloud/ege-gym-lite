@@ -498,6 +498,60 @@
     let mathCache = null; // { examType, subject, tasks: TaskPublic[] }
     let mathCounts = {}; // { [examTaskNumber]: number }
     let mathThemeCounts = {}; // { [themeName]: number }
+    let activeHoldStop = null;
+
+    function stopActiveHold() {
+      if (typeof activeHoldStop === "function") {
+        try { activeHoldStop(); } catch (e) {}
+      }
+      activeHoldStop = null;
+    }
+
+    function bindPressHold(btn, stepFn, opts) {
+      if (!btn) return;
+      const delayMs = (opts && Number.isFinite(opts.delayMs)) ? opts.delayMs : 260;
+      const intervalMs = (opts && Number.isFinite(opts.intervalMs)) ? opts.intervalMs : 120;
+
+      btn.addEventListener("pointerdown", (e) => {
+        if (btn.disabled) return;
+        // If we are about to re-render on stepFn, make sure any previous hold is stopped,
+        // otherwise timers can keep running after DOM is replaced.
+        stopActiveHold();
+
+        let t0 = null;
+        let interval = null;
+        let stopped = false;
+        const onWinUp = () => stop();
+        const onWinCancel = () => stop();
+
+        const stop = () => {
+          if (stopped) return;
+          stopped = true;
+          if (t0) window.clearTimeout(t0);
+          if (interval) window.clearInterval(interval);
+          t0 = null;
+          interval = null;
+          window.removeEventListener("pointerup", onWinUp);
+          window.removeEventListener("pointercancel", onWinCancel);
+          if (activeHoldStop === stop) activeHoldStop = null;
+        };
+        activeHoldStop = stop;
+
+        btn.setPointerCapture?.(e.pointerId);
+        stepFn();
+
+        window.addEventListener("pointerup", onWinUp, { passive: true });
+        window.addEventListener("pointercancel", onWinCancel, { passive: true });
+
+        t0 = window.setTimeout(() => {
+          if (stopped) return;
+          interval = window.setInterval(() => {
+            if (stopped) return;
+            stepFn();
+          }, intervalMs);
+        }, delayMs);
+      });
+    }
     const mathTopicsByNumber = {
       1: "Планиметрия",
       2: "Векторы",
@@ -977,6 +1031,8 @@
     }
 
     function renderMathPlanList(cache) {
+      // Stop any in-flight press-and-hold timers before replacing DOM.
+      stopActiveHold();
       const list = document.getElementById("mathPlanList");
       const totalEl = document.getElementById("mathTotal");
       const hintEl = document.getElementById("mathHint");
@@ -1050,30 +1106,7 @@
         function bindHold(btn, themeName) {
           const op = btn.getAttribute("data-op");
           if (!op) return;
-          let t0 = null;
-          let interval = null;
-          let stopped = false;
-          const stop = () => {
-            stopped = true;
-            if (t0) window.clearTimeout(t0);
-            if (interval) window.clearInterval(interval);
-            t0 = null;
-            interval = null;
-          };
-          btn.addEventListener("pointerdown", (e) => {
-            if (btn.disabled) return;
-            stopped = false;
-            btn.setPointerCapture?.(e.pointerId);
-            stepTheme(op, themeName);
-            t0 = window.setTimeout(() => {
-              if (stopped) return;
-              interval = window.setInterval(() => stepTheme(op, themeName), 120);
-            }, 260);
-          });
-          btn.addEventListener("pointerup", stop);
-          btn.addEventListener("pointercancel", stop);
-          btn.addEventListener("pointerleave", stop);
-          window.addEventListener("blur", stop);
+          bindPressHold(btn, () => stepTheme(op, themeName));
         }
 
         function renderPlanimetryPicker(into) {
@@ -1134,35 +1167,10 @@
           }
 
           function bindHoldAction(btn, actionFn) {
-            let t0 = null;
-            let interval = null;
-            let stopped = false;
-            const stop = () => {
-              stopped = true;
-              if (t0) window.clearTimeout(t0);
-              if (interval) window.clearInterval(interval);
-              t0 = null;
-              interval = null;
-            };
-            btn.addEventListener("pointerdown", (e) => {
-              if (btn.disabled) return;
-              stopped = false;
-              btn.setPointerCapture?.(e.pointerId);
+            bindPressHold(btn, () => {
               const changed = actionFn();
               if (changed) renderMathPlanList(cache);
-              t0 = window.setTimeout(() => {
-                if (stopped) return;
-                interval = window.setInterval(() => {
-                  const ok = actionFn();
-                  if (!ok) return;
-                  renderMathPlanList(cache);
-                }, 120);
-              }, 260);
             });
-            btn.addEventListener("pointerup", stop);
-            btn.addEventListener("pointercancel", stop);
-            btn.addEventListener("pointerleave", stop);
-            window.addEventListener("blur", stop);
           }
 
           const decAll = head.querySelector("button[data-op=\"dec-all\"]");
@@ -1343,33 +1351,7 @@
         const op = btn.getAttribute("data-op");
         if (!Number.isFinite(num) || num <= 0) return;
         if (!op) return;
-
-        let t0 = null;
-        let interval = null;
-        let stopped = false;
-        const stop = () => {
-          stopped = true;
-          if (t0) window.clearTimeout(t0);
-          if (interval) window.clearInterval(interval);
-          t0 = null;
-          interval = null;
-        };
-
-        btn.addEventListener("pointerdown", (e) => {
-          if (btn.disabled) return;
-          stopped = false;
-          btn.setPointerCapture?.(e.pointerId);
-          step(op, num);
-          // start repeating after a short delay
-          t0 = window.setTimeout(() => {
-            if (stopped) return;
-            interval = window.setInterval(() => step(op, num), 120);
-          }, 260);
-        });
-        btn.addEventListener("pointerup", stop);
-        btn.addEventListener("pointercancel", stop);
-        btn.addEventListener("pointerleave", stop);
-        window.addEventListener("blur", stop);
+        bindPressHold(btn, () => step(op, num));
       }
 
       list.querySelectorAll("button.qty-btn").forEach((btn) => bindHold(btn));
