@@ -335,6 +335,8 @@
       border: 1px solid var(--border);
       background: #fff;
       font-weight: 800;
+      font-size: 12px;
+      line-height: 1.1;
       color: #111827;
       font-variant-numeric: tabular-nums;
     }
@@ -347,6 +349,8 @@
       border: 1px solid var(--border);
       background: #fff;
       font-weight: 800;
+      font-size: 12px;
+      line-height: 1.1;
       color: #111827;
       font-variant-numeric: tabular-nums;
       white-space: nowrap;
@@ -765,6 +769,13 @@
       return t ? mathPlanimetryThemeSet.has(t) : false;
     }
 
+    function planimetryThemeMax(theme) {
+      const t = String(theme || "").trim();
+      if (!t) return 0;
+      const found = mathPlanimetryThemes.find((x) => x.name === t);
+      return found ? Number(found.max || 0) : 0;
+    }
+
     async function loadFilters() {
       const res = await fetch("/api/filters");
       if (!res.ok) return;
@@ -988,6 +999,19 @@
       const visibleSet = new Set(numbers.map((n) => String(n)));
       const allNums = Array.from({ length: 19 }, (_, i) => i + 1);
 
+      function maxForNumber(n) {
+        if (!visibleSet.has(String(n))) return 0;
+        const poolLen = (byNum.get(n) || []).length;
+        if (poolLen > 0) return poolLen;
+        // For planimetry themes we allow selecting up to the curated max,
+        // even if tasks are not tagged/available yet.
+        if (n === 1 && isPlanimetryThemeSelected(subtopic)) {
+          const m = planimetryThemeMax(subtopic);
+          return Number.isFinite(m) && m > 0 ? m : 0;
+        }
+        return 0;
+      }
+
       // Planimetry subthemes (№1) — show when theme is "Любая".
       if (!subtopic) {
         const availableTotal = mathPlanimetryThemes.reduce((s, t) => s + t.max, 0);
@@ -1188,7 +1212,7 @@
       allNums.forEach((n) => {
         const max = (String(n) === "1" && !subtopic)
           ? mathPlanimetryThemes.reduce((s, t) => s + t.max, 0)
-          : (visibleSet.has(String(n)) ? (byNum.get(n) || []).length : 0);
+          : maxForNumber(n);
         const raw = nextCounts[String(n)];
         const val = Number(raw);
         nextCounts[String(n)] = Number.isFinite(val) ? Math.max(0, Math.min(val, max)) : 0;
@@ -1237,8 +1261,7 @@
       }
 
       function addEmptyAccordion(n) {
-        const pool = byNum.get(n) || [];
-        const max = pool.length;
+        const max = maxForNumber(n);
         const key = String(n);
         const val = mathCounts[key] || 0;
         const topicName = mathTopicsByNumber[n] || "Тема";
@@ -1306,7 +1329,7 @@
       function step(op, num) {
         if (!Number.isFinite(num) || num <= 0) return;
         if (!visibleSet.has(String(num))) return;
-        const max = (byNum.get(num) || []).length;
+        const max = maxForNumber(num);
         const key = String(num);
         const cur = Number(mathCounts[key] || 0);
         const next = op === "inc" ? Math.min(cur + 1, max) : Math.max(cur - 1, 0);
