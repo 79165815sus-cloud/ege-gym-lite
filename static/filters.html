@@ -273,16 +273,20 @@
     }
     .accordion-head:hover .chev{ background:#ede9fe; }
     .accordion-title{
-      font-size: 12px;
-      font-weight: 900;
-      color: var(--accent);
-      letter-spacing: 0.02em;
-      text-transform: uppercase;
+      font-size: 14px;
+      font-weight: 700;
+      color: #111827;
+      letter-spacing: -0.01em;
+      text-transform: none;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
     .accordion-body.hidden{ display:none; }
+    .accordion-body{
+      padding: 0;
+      margin: 0;
+    }
     .plan-row{
       display: grid;
       grid-template-columns: 1fr 160px;
@@ -333,6 +337,19 @@
       font-weight: 800;
       color: #111827;
       font-variant-numeric: tabular-nums;
+    }
+    .qty-val-wide{
+      width: auto;
+      min-width: 88px;
+      text-align: center;
+      padding: 8px 12px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: #fff;
+      font-weight: 800;
+      color: #111827;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
     }
     .qty-val-wide{
       width: auto;
@@ -1219,6 +1236,55 @@
         list.appendChild(row);
       }
 
+      function addEmptyAccordion(n) {
+        const pool = byNum.get(n) || [];
+        const max = pool.length;
+        const key = String(n);
+        const val = mathCounts[key] || 0;
+        const topicName = mathTopicsByNumber[n] || "Тема";
+
+        const collapsedKey = `numCollapsed:${n}`;
+        const collapsed = sessionStorage.getItem(collapsedKey) === "1";
+
+        const head = document.createElement("div");
+        head.className = "accordion-head";
+        head.innerHTML = `
+          <div class="accordion-left" role="button" tabindex="0" aria-expanded="${collapsed ? "false" : "true"}" aria-label="Свернуть/развернуть номер ${n}">
+            <div class="chev" aria-hidden="true">${collapsed ? "▸" : "▾"}</div>
+            <div class="topic">
+              <div class="accordion-title">${n}. ${topicName}</div>
+              ${max > 0 ? `<div class="meta">Доступно: ${max}</div>` : ``}
+            </div>
+          </div>
+          <div class="qty" aria-label="Количество задач для номера ${n}">
+            <button class="qty-btn" data-op="dec" data-num="${n}" ${val <= 0 ? "disabled" : ""} aria-label="Уменьшить количество для номера ${n}" title="Уменьшить">−</button>
+            <div class="qty-val-wide" aria-label="Выбрано / доступно">${val}${max ? ` / ${max}` : ""}</div>
+            <button class="qty-btn" data-op="inc" data-num="${n}" ${val >= max ? "disabled" : ""} aria-label="Увеличить количество для номера ${n}" title="Увеличить">+</button>
+          </div>
+        `;
+
+        const body = document.createElement("div");
+        body.className = "accordion-body" + (collapsed ? " hidden" : "");
+
+        const left = head.querySelector(".accordion-left");
+        if (left) {
+          const toggle = () => {
+            sessionStorage.setItem(collapsedKey, collapsed ? "0" : "1");
+            renderMathPlanList(cache);
+          };
+          left.addEventListener("click", toggle);
+          left.addEventListener("keydown", (e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              toggle();
+            }
+          });
+        }
+
+        list.appendChild(head);
+        list.appendChild(body);
+      }
+
       const numbersToRender = (!subtopic) ? numbers.filter((n) => n !== 1) : numbers;
       const hasShort = numbersToRender.some((n) => n >= 1 && n <= 12);
       const hasLong = numbers.some((n) => n >= 13 && n <= 19);
@@ -1229,11 +1295,11 @@
           const into = list;
           if (typeof injectPlanimetry === "function") injectPlanimetry(into);
         }
-        numbersToRender.filter((n) => n >= 1 && n <= 12).forEach((n) => addRow(n));
+        numbersToRender.filter((n) => n >= 1 && n <= 12).forEach((n) => addEmptyAccordion(n));
       }
       if (hasLong) {
         addSection("Развернутый ответ");
-        numbersToRender.filter((n) => n >= 13 && n <= 19).forEach((n) => addRow(n));
+        numbersToRender.filter((n) => n >= 13 && n <= 19).forEach((n) => addEmptyAccordion(n));
       }
 
       // "Live" +/-: click or press-and-hold.
