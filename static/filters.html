@@ -247,7 +247,6 @@
       justify-content: space-between;
       align-items: center;
       gap: 10px;
-      cursor: pointer;
       user-select: none;
     }
     .accordion-left{
@@ -255,6 +254,7 @@
       align-items: center;
       gap: 10px;
       min-width: 0;
+      cursor: pointer;
     }
     .chev{
       width: 22px;
@@ -333,6 +333,19 @@
       font-weight: 800;
       color: #111827;
       font-variant-numeric: tabular-nums;
+    }
+    .qty-val-wide{
+      width: auto;
+      min-width: 88px;
+      text-align: center;
+      padding: 8px 12px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: #fff;
+      font-weight: 800;
+      color: #111827;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
     }
     .topic{
       display:flex;
@@ -1027,15 +1040,16 @@
 
           const head = document.createElement("div");
           head.className = "accordion-head";
-          head.setAttribute("role", "button");
-          head.setAttribute("tabindex", "0");
-          head.setAttribute("aria-expanded", collapsed ? "false" : "true");
           head.innerHTML = `
-            <div class="accordion-left">
+            <div class="accordion-left" role="button" tabindex="0" aria-expanded="${collapsed ? "false" : "true"}" aria-label="Свернуть/развернуть планиметрию">
               <div class="chev" aria-hidden="true">${collapsed ? "▸" : "▾"}</div>
-              <div class="accordion-title">Планиметрия</div>
+              <div class="accordion-title">№1 Планиметрия</div>
             </div>
-            <div class="section-count">${pickedTotal} / ${availableTotal}</div>
+            <div class="qty" aria-label="Количество задач по планиметрии">
+              <button class="qty-btn" data-op="dec-all" ${pickedTotal <= 0 ? "disabled" : ""} aria-label="Уменьшить количество по планиметрии" title="Уменьшить">−</button>
+              <div class="qty-val-wide" aria-label="Выбрано / всего">${pickedTotal} / ${availableTotal}</div>
+              <button class="qty-btn" data-op="inc-all" ${pickedTotal >= availableTotal ? "disabled" : ""} aria-label="Увеличить количество по планиметрии" title="Увеличить">+</button>
+            </div>
           `;
 
           const body = document.createElement("div");
@@ -1045,13 +1059,75 @@
             sessionStorage.setItem("planiCollapsed", collapsed ? "0" : "1");
             renderMathPlanList(cache);
           }
-          head.addEventListener("click", toggle);
-          head.addEventListener("keydown", (e) => {
-            if (e.key === "Enter" || e.key === " ") {
-              e.preventDefault();
-              toggle();
+          const left = head.querySelector(".accordion-left");
+          if (left) {
+            left.addEventListener("click", toggle);
+            left.addEventListener("keydown", (e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                toggle();
+              }
+            });
+          }
+
+          function incAnyTheme() {
+            for (const t of mathPlanimetryThemes) {
+              const cur = Number(mathThemeCounts[t.name] || 0) || 0;
+              if (cur < t.max) {
+                mathThemeCounts[t.name] = cur + 1;
+                return true;
+              }
             }
-          });
+            return false;
+          }
+          function decAnyTheme() {
+            for (let i = mathPlanimetryThemes.length - 1; i >= 0; i -= 1) {
+              const t = mathPlanimetryThemes[i];
+              const cur = Number(mathThemeCounts[t.name] || 0) || 0;
+              if (cur > 0) {
+                mathThemeCounts[t.name] = cur - 1;
+                return true;
+              }
+            }
+            return false;
+          }
+
+          function bindHoldAction(btn, actionFn) {
+            let t0 = null;
+            let interval = null;
+            let stopped = false;
+            const stop = () => {
+              stopped = true;
+              if (t0) window.clearTimeout(t0);
+              if (interval) window.clearInterval(interval);
+              t0 = null;
+              interval = null;
+            };
+            btn.addEventListener("pointerdown", (e) => {
+              if (btn.disabled) return;
+              stopped = false;
+              btn.setPointerCapture?.(e.pointerId);
+              const changed = actionFn();
+              if (changed) renderMathPlanList(cache);
+              t0 = window.setTimeout(() => {
+                if (stopped) return;
+                interval = window.setInterval(() => {
+                  const ok = actionFn();
+                  if (!ok) return;
+                  renderMathPlanList(cache);
+                }, 120);
+              }, 260);
+            });
+            btn.addEventListener("pointerup", stop);
+            btn.addEventListener("pointercancel", stop);
+            btn.addEventListener("pointerleave", stop);
+            window.addEventListener("blur", stop);
+          }
+
+          const decAll = head.querySelector("button[data-op=\"dec-all\"]");
+          const incAll = head.querySelector("button[data-op=\"inc-all\"]");
+          if (incAll) bindHoldAction(incAll, incAnyTheme);
+          if (decAll) bindHoldAction(decAll, decAnyTheme);
 
           mathPlanimetryThemes.forEach((t) => {
             const val = Number(mathThemeCounts[t.name] || 0) || 0;
@@ -1110,13 +1186,6 @@
         </div>
       `;
 
-      // Insert planimetry picker (only when theme is "Любая").
-      if (!subtopic) {
-        const into = list;
-        // Note: injectPlanimetry is a function-local var created above.
-        if (typeof injectPlanimetry === "function") injectPlanimetry(into);
-      }
-
       function addSection(title) {
         const el = document.createElement("div");
         el.className = "plan-section";
@@ -1155,6 +1224,11 @@
       const hasLong = numbers.some((n) => n >= 13 && n <= 19);
       if (hasShort) {
         addSection("Краткий ответ");
+        // For "Любая" theme: show Planimetry (№1) inside "Краткий ответ".
+        if (!subtopic) {
+          const into = list;
+          if (typeof injectPlanimetry === "function") injectPlanimetry(into);
+        }
         numbersToRender.filter((n) => n >= 1 && n <= 12).forEach((n) => addRow(n));
       }
       if (hasLong) {
