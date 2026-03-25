@@ -625,6 +625,7 @@
       const params = new URLSearchParams(window.location.search);
       const rawCount = params.get("count");
       const sequence = params.get("sequence") === "1";
+      const customSequence = params.get("custom") === "1";
       sequenceMode = sequence;
       if (!sequenceMode) {
         sequenceIndex = null;
@@ -667,9 +668,29 @@
 
       if (sequence) {
         if (!sequenceTasks) {
+          if (customSequence) {
+            try {
+              const raw = sessionStorage.getItem("customSequenceTasks");
+              const parsed = raw ? JSON.parse(raw) : null;
+              if (Array.isArray(parsed) && parsed.length) {
+                sequenceTasks = parsed;
+                if (!totalCount) {
+                  totalCount = sequenceTasks.length;
+                  remainingCount = totalCount;
+                }
+                applyStartIndexIfNeeded();
+                saveTrainingList(sequenceTasks);
+              }
+            } catch (error) {
+              // fall back to fetching by filters
+            }
+          }
+        }
+        if (!sequenceTasks) {
           const listParams = new URLSearchParams(params.toString());
           listParams.delete("count");
           listParams.delete("sequence");
+          listParams.delete("custom");
           const listUrl = listParams.toString() ? "/api/tasks-public?" + listParams.toString() : "/api/tasks-public";
           const listRes = await fetch(listUrl);
           if (!listRes.ok) {

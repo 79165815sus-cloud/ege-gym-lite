@@ -206,6 +206,43 @@
       display: none !important;
     }
 
+    /* Math plan */
+    .plan-list{
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 10px;
+      background: #fff;
+    }
+    .plan-row{
+      display: grid;
+      grid-template-columns: 70px 1fr 150px;
+      gap: 10px;
+      align-items: center;
+      padding: 8px 6px;
+      border-bottom: 1px solid rgba(229,231,235,0.7);
+    }
+    .plan-row:last-child{ border-bottom: none; }
+    .plan-row strong{ color: var(--accent); }
+    .muted{ color: var(--muted); font-size: 12px; }
+    .plan-row input{
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      font-size: 14px;
+      background: #fff;
+    }
+    .total{
+      margin-top: 10px;
+      display:flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .total strong{ color: var(--accent); }
+
   </style>
 </head>
 <body>
@@ -254,6 +291,23 @@
         </select>
       </div>
 
+      <div class="field hidden" id="subtopicField">
+        <label for="subtopic">Подтема</label>
+        <select id="subtopic">
+          <option value="">Любая</option>
+        </select>
+        <div class="muted" style="margin-top:6px;">Выбери подтему — и настроим тренировки по номерам внутри неё.</div>
+      </div>
+
+      <div class="field hidden" id="mathPlanField">
+        <label>Сколько задач по каждому номеру</label>
+        <div class="plan-list" id="mathPlanList"></div>
+        <div class="total">
+          <span>Итого задач: <strong id="mathTotal">0</strong></span>
+          <span class="muted" id="mathHint"></span>
+        </div>
+      </div>
+
       <div class="field hidden" id="variantField">
         <label for="variantNumber">Вариант</label>
         <select id="variantNumber">
@@ -292,6 +346,8 @@
   <script>
     let filtersData = null;
     const initialParams = new URLSearchParams(window.location.search);
+    let mathCache = null; // { examType, subject, tasks: TaskPublic[] }
+    let mathCounts = {}; // { [examTaskNumber]: number }
 
     async function loadFilters() {
       const res = await fetch("/api/filters");
@@ -345,6 +401,8 @@
           countSelect.value = countParam;
         }
       }
+
+      await ensureMathUI();
     }
 
     function fillSelect(id, items) {
@@ -404,6 +462,199 @@
       if (previous && [...examSelect.options].some((opt) => opt.value === previous)) {
         examSelect.value = previous;
       }
+    }
+
+    function isMathSubject(subject) {
+      return subject === "Математика профиль";
+    }
+
+    function setHidden(id, hidden) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      if (hidden) el.classList.add("hidden");
+      else el.classList.remove("hidden");
+    }
+
+    function clearTrainingStorage() {
+      sessionStorage.removeItem("trainingScores");
+      sessionStorage.removeItem("trainingMeta");
+      sessionStorage.removeItem("trainingList");
+      sessionStorage.removeItem("giftShown");
+      sessionStorage.removeItem("customSequenceTasks");
+      Object.keys(sessionStorage).forEach((key) => {
+        if (key.startsWith("manualScore:")) sessionStorage.removeItem(key);
+      });
+    }
+
+    function shuffleInPlace(arr) {
+      for (let i = arr.length - 1; i > 0; i -= 1) {
+        const j = Math.floor(Math.random() * (i + 1));
+        const t = arr[i];
+        arr[i] = arr[j];
+        arr[j] = t;
+      }
+      return arr;
+    }
+
+    function sampleN(items, n) {
+      if (!Array.isArray(items) || n <= 0) return [];
+      const copy = items.slice();
+      shuffleInPlace(copy);
+      return copy.slice(0, Math.min(n, copy.length));
+    }
+
+    async function ensureMathCache() {
+      const subject = document.getElementById("subject").value;
+      const examSwitch = document.getElementById("examSwitch");
+      if (!isMathSubject(subject)) return null;
+
+      // For now we do this flow only for ЕГЭ math профиль.
+      if (!examSwitch.checked) {
+        examSwitch.checked = true;
+        updateExamTypeText();
+      }
+      const examType = "ЕГЭ";
+      const key = `${examType}::${subject}`;
+      if (mathCache && mathCache.key === key) return mathCache;
+
+      const params = new URLSearchParams();
+      params.set("examType", examType);
+      params.set("subject", subject);
+      const res = await fetch("/api/tasks-public?" + params.toString());
+      if (!res.ok) return null;
+      const tasks = await res.json();
+      mathCache = { key, examType, subject, tasks: Array.isArray(tasks) ? tasks : [] };
+      return mathCache;
+    }
+
+    function renderMathSubtopics(cache) {
+      const select = document.getElementById("subtopic");
+      const prev = select.value;
+      select.innerHTML = "<option value=\"\">Любая</option>";
+
+      const seen = new Set();
+      const items = [];
+      (cache.tasks || []).forEach((t) => {
+        const s = (t && t.subtopic ? String(t.subtopic) : "").trim();
+        if (!s) return;
+        if (seen.has(s)) return;
+        seen.add(s);
+        items.push(s);
+      });
+      items.sort((a, b) => a.localeCompare(b, "ru"));
+      items.forEach((s) => {
+        const opt = document.createElement("option");
+        opt.value = s;
+        opt.textContent = s;
+        select.appendChild(opt);
+      });
+
+      if (prev && [...select.options].some((o) => o.value === prev)) {
+        select.value = prev;
+      }
+    }
+
+    function renderMathPlanList(cache) {
+      const list = document.getElementById("mathPlanList");
+      const totalEl = document.getElementById("mathTotal");
+      const hintEl = document.getElementById("mathHint");
+
+      const subtopic = (document.getElementById("subtopic").value || "").trim();
+      const tasks = (cache.tasks || []).filter((t) => {
+        if (!subtopic) return true;
+        return String(t.subtopic || "").trim() === subtopic;
+      });
+
+      const byNum = new Map();
+      tasks.forEach((t) => {
+        const n = Number(t.examTaskNumber);
+        if (!Number.isFinite(n) || n <= 0) return;
+        if (!byNum.has(n)) byNum.set(n, []);
+        byNum.get(n).push(t);
+      });
+
+      const numbers = Array.from(byNum.keys()).sort((a, b) => a - b);
+      if (!numbers.length) {
+        list.innerHTML = "<div class=\"muted\">Нет задач под выбранную подтему.</div>";
+        totalEl.textContent = "0";
+        hintEl.textContent = "";
+        return;
+      }
+
+      // Keep only relevant counts
+      const nextCounts = {};
+      numbers.forEach((n) => {
+        const raw = mathCounts[String(n)];
+        const max = byNum.get(n).length;
+        const val = Number(raw);
+        nextCounts[String(n)] = Number.isFinite(val) ? Math.max(0, Math.min(val, max)) : 0;
+      });
+      mathCounts = nextCounts;
+
+      list.innerHTML = "";
+      let total = 0;
+      numbers.forEach((n) => {
+        const max = byNum.get(n).length;
+        const key = String(n);
+        const val = mathCounts[key] || 0;
+        total += val;
+
+        const row = document.createElement("div");
+        row.className = "plan-row";
+        row.innerHTML = `
+          <div><strong>№${n}</strong></div>
+          <div class="muted">Доступно: ${max}</div>
+          <div><input type="number" inputmode="numeric" min="0" max="${max}" value="${val}" data-num="${n}" aria-label="Количество задач для номера ${n}"/></div>
+        `;
+        list.appendChild(row);
+      });
+      totalEl.textContent = String(total);
+      hintEl.textContent = total > 0 ? "План будет собран случайно из доступных задач." : "Выбери хотя бы 1 задачу.";
+
+      list.querySelectorAll("input[data-num]").forEach((inp) => {
+        inp.addEventListener("change", () => {
+          const num = inp.getAttribute("data-num");
+          const max = Number(inp.getAttribute("max") || "0");
+          const v = Number(inp.value);
+          const safe = Number.isFinite(v) ? Math.max(0, Math.min(v, max)) : 0;
+          inp.value = String(safe);
+          mathCounts[String(num)] = safe;
+          renderMathPlanList(cache);
+        });
+      });
+    }
+
+    async function ensureMathUI() {
+      const subject = document.getElementById("subject").value;
+      const math = isMathSubject(subject);
+
+      // Fields toggling
+      const modeField = document.getElementById("modeSwitch").closest(".field");
+      setHidden(modeField ? modeField.id : "", false); // no-op, keep safe
+
+      setHidden("subtopicField", !math);
+      setHidden("mathPlanField", !math);
+
+      // Hide old controls for math-only flow
+      const examField = document.getElementById("examTaskNumber").closest(".field");
+      if (examField) {
+        if (math) examField.classList.add("hidden");
+        else examField.classList.remove("hidden");
+      }
+      setHidden("taskCountField", math);
+      setHidden("variantField", true);
+      // Hide mode switch for math (to avoid confusion)
+      const modeSwitchField = document.getElementById("modeSwitch").closest(".field");
+      if (modeSwitchField) {
+        if (math) modeSwitchField.classList.add("hidden");
+        else modeSwitchField.classList.remove("hidden");
+      }
+
+      if (!math) return;
+      const cache = await ensureMathCache();
+      if (!cache) return;
+      renderMathSubtopics(cache);
+      renderMathPlanList(cache);
     }
 
     async function updateTaskCountOptions() {
@@ -466,6 +717,12 @@
       const taskCount = taskCountSelect.value;
       const variantNumber = document.getElementById("variantNumber").value;
 
+      // New flow: Math профиль → подтема → по каждому номеру выбрать кол-во задач.
+      if (isMathSubject(subject)) {
+        startMathPlan();
+        return;
+      }
+
       if (examType) params.set("examType", examType);
       if (subject) params.set("subject", subject);
       if (modeSwitch.checked) {
@@ -480,6 +737,56 @@
 
       const url = params.toString() ? "/train?" + params.toString() : "/train";
       window.location.href = url;
+    }
+
+    async function startMathPlan() {
+      const subject = document.getElementById("subject").value;
+      const subtopic = (document.getElementById("subtopic").value || "").trim();
+      const cache = await ensureMathCache();
+      if (!cache) return;
+
+      const tasks = (cache.tasks || []).filter((t) => {
+        if (!subtopic) return true;
+        return String(t.subtopic || "").trim() === subtopic;
+      });
+      const byNum = new Map();
+      tasks.forEach((t) => {
+        const n = Number(t.examTaskNumber);
+        if (!Number.isFinite(n) || n <= 0) return;
+        if (!byNum.has(n)) byNum.set(n, []);
+        byNum.get(n).push(t);
+      });
+
+      let selected = [];
+      Object.keys(mathCounts).forEach((k) => {
+        const n = Number(k);
+        const want = Number(mathCounts[k] || 0);
+        if (!Number.isFinite(n) || !Number.isFinite(want) || want <= 0) return;
+        const pool = byNum.get(n) || [];
+        selected = selected.concat(sampleN(pool, want));
+      });
+
+      if (!selected.length) {
+        // Nothing selected; keep user on page.
+        const hintEl = document.getElementById("mathHint");
+        if (hintEl) hintEl.textContent = "Выбери хотя бы 1 задачу, чтобы начать.";
+        return;
+      }
+
+      // Shuffle final plan so it feels like a mixed workout.
+      shuffleInPlace(selected);
+
+      clearTrainingStorage();
+      sessionStorage.setItem("customSequenceTasks", JSON.stringify(selected));
+
+      const p = new URLSearchParams();
+      p.set("sequence", "1");
+      p.set("custom", "1");
+      p.set("examType", "ЕГЭ");
+      p.set("subject", subject);
+      if (subtopic) p.set("subtopic", subtopic);
+      p.set("count", String(selected.length));
+      window.location.href = "/train?" + p.toString();
     }
 
     function resetFilters() {
@@ -541,6 +848,7 @@
     document.getElementById("subject").addEventListener("change", () => {
       updateExamTaskOptions();
       updateTaskCountOptions();
+      ensureMathUI();
     });
     document.getElementById("examTaskNumber").addEventListener("change", () => {
       handleExamTaskChange();
@@ -549,10 +857,14 @@
     document.getElementById("examSwitch").addEventListener("change", () => {
       updateExamTypeText();
       updateTaskCountOptions();
+      ensureMathUI();
     });
     document.getElementById("modeSwitch").addEventListener("change", () => {
       updateModeText();
       updateModeVisibility();
+    });
+    document.getElementById("subtopic").addEventListener("change", () => {
+      if (mathCache) renderMathPlanList(mathCache);
     });
     updateExamTypeText();
     updateModeText();
