@@ -1380,10 +1380,17 @@
       // Hide old controls for math-only flow
       const examField = document.getElementById("examTaskNumber").closest(".field");
       if (examField) {
-        if (math && !isProbnik) examField.classList.add("hidden");
-        else examField.classList.remove("hidden");
+        // In "Пробники" we never show examTaskNumber selector.
+        if (isProbnik) {
+          examField.classList.add("hidden");
+        } else if (math) {
+          examField.classList.add("hidden");
+        } else {
+          examField.classList.remove("hidden");
+        }
       }
-      setHidden("taskCountField", math && !isProbnik);
+      // In "Пробники" count is fixed by variant, so hide the count selector.
+      setHidden("taskCountField", isProbnik || (math && !isProbnik));
       // Variant is used in "Пробники" mode (including math).
       setHidden("variantField", !isProbnik);
 
