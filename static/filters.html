@@ -916,8 +916,8 @@
       const visibleSet = new Set(numbers.map((n) => String(n)));
       const allNums = Array.from({ length: 19 }, (_, i) => i + 1);
 
-      // Special view for Planimetry subthemes (№1).
-      if (numbers.length === 1 && numbers[0] === 1 && isPlanimetryThemeSelected(subtopic)) {
+      // Planimetry subthemes (№1) — show when theme is "Любая".
+      if (!subtopic) {
         const availableTotal = mathPlanimetryThemes.reduce((s, t) => s + t.max, 0);
         const poolMax = (byNum.get(1) || []).length;
 
@@ -938,18 +938,8 @@
         nextCounts["1"] = pickedTotal;
         mathCounts = nextCounts;
 
-        list.innerHTML = "";
-        list.innerHTML += `
-          <div class="plan-head">
-            <div><strong>Номер задания в экзамене</strong></div>
-            <div><strong>Количество</strong></div>
-          </div>
-        `;
-
-        const sec = document.createElement("div");
-        sec.className = "plan-section";
-        sec.innerHTML = `<span>1 линия</span><span class="section-count">${pickedTotal} / ${availableTotal}</span>`;
-        list.appendChild(sec);
+        // We will render the planimetry picker block at the top and then continue rendering
+        // the rest of the task-number planner below it.
 
         function stepTheme(op, themeName) {
           const t = mathPlanimetryThemes.find((x) => x.name === themeName);
@@ -990,42 +980,52 @@
           window.addEventListener("blur", stop);
         }
 
-        mathPlanimetryThemes.forEach((t) => {
-          const val = Number(mathThemeCounts[t.name] || 0) || 0;
-          const row = document.createElement("div");
-          row.className = "plan-row";
-          row.innerHTML = `
-            <div class="topic">
-              <div class="meta">Раздел: Планиметрия первой части</div>
-              <div class="name">${t.name}</div>
-            </div>
-            <div class="qty">
-              <button class="qty-btn" data-op="dec" ${val <= 0 ? "disabled" : ""} aria-label="Уменьшить для темы ${t.name}" title="Уменьшить">−</button>
-              <div class="qty-val" aria-label="Количество задач для темы ${t.name}">${val} / ${t.max}</div>
-              <button class="qty-btn" data-op="inc" ${val >= t.max ? "disabled" : ""} aria-label="Увеличить для темы ${t.name}" title="Увеличить">+</button>
-            </div>
-          `;
-          const btns = row.querySelectorAll("button.qty-btn");
-          if (btns && btns.length === 2) {
-            bindHold(btns[0], t.name);
-            bindHold(btns[1], t.name);
-          }
-          list.appendChild(row);
-        });
+        function renderPlanimetryPicker(into) {
+          const sec = document.createElement("div");
+          sec.className = "plan-section";
+          sec.innerHTML = `<span>1 линия</span><span class="section-count">${pickedTotal} / ${availableTotal}</span>`;
+          into.appendChild(sec);
 
-        totalEl.textContent = String(pickedTotal);
-        if (poolMax > 0 && pickedTotal > poolMax) {
-          hintEl.textContent = `В базе сейчас доступно ${poolMax} задач №1 — план начнётся, но будет короче выбранного.`;
-        } else {
-          hintEl.textContent = pickedTotal > 0 ? "План будет собран случайно из задач №1." : "Выбери хотя бы 1 задачу.";
+          mathPlanimetryThemes.forEach((t) => {
+            const val = Number(mathThemeCounts[t.name] || 0) || 0;
+            const row = document.createElement("div");
+            row.className = "plan-row";
+            row.innerHTML = `
+              <div class="topic">
+                <div class="meta">Раздел: Планиметрия первой части</div>
+                <div class="name">${t.name}</div>
+              </div>
+              <div class="qty">
+                <button class="qty-btn" data-op="dec" ${val <= 0 ? "disabled" : ""} aria-label="Уменьшить для темы ${t.name}" title="Уменьшить">−</button>
+                <div class="qty-val" aria-label="Количество задач для темы ${t.name}">${val} / ${t.max}</div>
+                <button class="qty-btn" data-op="inc" ${val >= t.max ? "disabled" : ""} aria-label="Увеличить для темы ${t.name}" title="Увеличить">+</button>
+              </div>
+            `;
+            const btns = row.querySelectorAll("button.qty-btn");
+            if (btns && btns.length === 2) {
+              bindHold(btns[0], t.name);
+              bindHold(btns[1], t.name);
+            }
+            into.appendChild(row);
+          });
         }
-        return;
+
+        // Stash messages for later (after rendering the whole planner).
+        var planimetryHint = null;
+        if (poolMax > 0 && pickedTotal > poolMax) {
+          planimetryHint = `В базе сейчас доступно ${poolMax} задач №1 — план начнётся, но будет короче выбранного.`;
+        }
+
+        // We'll inject the block after we render the header below.
+        var injectPlanimetry = (into) => renderPlanimetryPicker(into); // eslint-disable-line no-var
       }
 
       // Normalize counts within available limits.
       const nextCounts = { ...mathCounts };
       allNums.forEach((n) => {
-        const max = visibleSet.has(String(n)) ? (byNum.get(n) || []).length : 0;
+        const max = (String(n) === "1" && !subtopic)
+          ? mathPlanimetryThemes.reduce((s, t) => s + t.max, 0)
+          : (visibleSet.has(String(n)) ? (byNum.get(n) || []).length : 0);
         const raw = nextCounts[String(n)];
         const val = Number(raw);
         nextCounts[String(n)] = Number.isFinite(val) ? Math.max(0, Math.min(val, max)) : 0;
@@ -1039,6 +1039,13 @@
           <div><strong>Количество</strong></div>
         </div>
       `;
+
+      // Insert planimetry picker (only when theme is "Любая").
+      if (!subtopic) {
+        const into = list;
+        // Note: injectPlanimetry is a function-local var created above.
+        if (typeof injectPlanimetry === "function") injectPlanimetry(into);
+      }
 
       function addSection(title) {
         const el = document.createElement("div");
@@ -1073,15 +1080,16 @@
         list.appendChild(row);
       }
 
-      const hasShort = numbers.some((n) => n >= 1 && n <= 12);
+      const numbersToRender = (!subtopic) ? numbers.filter((n) => n !== 1) : numbers;
+      const hasShort = numbersToRender.some((n) => n >= 1 && n <= 12);
       const hasLong = numbers.some((n) => n >= 13 && n <= 19);
       if (hasShort) {
         addSection("Краткий ответ");
-        numbers.filter((n) => n >= 1 && n <= 12).forEach((n) => addRow(n));
+        numbersToRender.filter((n) => n >= 1 && n <= 12).forEach((n) => addRow(n));
       }
       if (hasLong) {
         addSection("Развернутый ответ");
-        numbers.filter((n) => n >= 13 && n <= 19).forEach((n) => addRow(n));
+        numbersToRender.filter((n) => n >= 13 && n <= 19).forEach((n) => addRow(n));
       }
 
       // "Live" +/-: click or press-and-hold.
@@ -1136,7 +1144,12 @@
       // Totals
       const total = numbers.reduce((sum, n) => sum + (Number(mathCounts[String(n)] || 0) || 0), 0);
       totalEl.textContent = String(total);
-      hintEl.textContent = total > 0 ? "План будет собран случайно из доступных задач." : "Выбери хотя бы 1 задачу.";
+      // Prefer the planimetry warning if applicable.
+      if (!subtopic && typeof planimetryHint === "string" && planimetryHint) {
+        hintEl.textContent = planimetryHint;
+      } else {
+        hintEl.textContent = total > 0 ? "План будет собран случайно из доступных задач." : "Выбери хотя бы 1 задачу.";
+      }
     }
 
     async function ensureMathUI() {
