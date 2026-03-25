@@ -241,6 +241,48 @@
       letter-spacing: 0.01em;
       text-transform: none;
     }
+    .accordion-head{
+      padding: 10px 6px 6px;
+      display:flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      user-select: none;
+    }
+    .accordion-left{
+      display:flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+    .chev{
+      width: 22px;
+      height: 22px;
+      border-radius: 8px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      border: 1px solid rgba(216, 180, 254, 0.85);
+      background: #f5f3ff;
+      color: var(--accent);
+      flex-shrink: 0;
+      transition: background .15s ease;
+      font-size: 14px;
+      line-height: 1;
+    }
+    .accordion-head:hover .chev{ background:#ede9fe; }
+    .accordion-title{
+      font-size: 12px;
+      font-weight: 900;
+      color: var(--accent);
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .accordion-body.hidden{ display:none; }
     .plan-row{
       display: grid;
       grid-template-columns: 1fr 160px;
@@ -981,10 +1023,35 @@
         }
 
         function renderPlanimetryPicker(into) {
-          const sec = document.createElement("div");
-          sec.className = "plan-section";
-          sec.innerHTML = `<span>1 линия</span><span class="section-count">${pickedTotal} / ${availableTotal}</span>`;
-          into.appendChild(sec);
+          const collapsed = sessionStorage.getItem("planiCollapsed") === "1";
+
+          const head = document.createElement("div");
+          head.className = "accordion-head";
+          head.setAttribute("role", "button");
+          head.setAttribute("tabindex", "0");
+          head.setAttribute("aria-expanded", collapsed ? "false" : "true");
+          head.innerHTML = `
+            <div class="accordion-left">
+              <div class="chev" aria-hidden="true">${collapsed ? "▸" : "▾"}</div>
+              <div class="accordion-title">Планиметрия</div>
+            </div>
+            <div class="section-count">${pickedTotal} / ${availableTotal}</div>
+          `;
+
+          const body = document.createElement("div");
+          body.className = "accordion-body" + (collapsed ? " hidden" : "");
+
+          function toggle() {
+            sessionStorage.setItem("planiCollapsed", collapsed ? "0" : "1");
+            renderMathPlanList(cache);
+          }
+          head.addEventListener("click", toggle);
+          head.addEventListener("keydown", (e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              toggle();
+            }
+          });
 
           mathPlanimetryThemes.forEach((t) => {
             const val = Number(mathThemeCounts[t.name] || 0) || 0;
@@ -1006,8 +1073,11 @@
               bindHold(btns[0], t.name);
               bindHold(btns[1], t.name);
             }
-            into.appendChild(row);
+            body.appendChild(row);
           });
+
+          into.appendChild(head);
+          into.appendChild(body);
         }
 
         // Stash messages for later (after rendering the whole planner).
