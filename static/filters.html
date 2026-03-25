@@ -1064,12 +1064,12 @@
         row.className = "plan-row";
 
         const topicName = mathTopicsByNumber[n] || "Тема";
-        const meta = max > 0 ? `Доступно: ${max}` : (subtopic ? "Нет задач по выбранной теме" : "Нет задач");
+        const metaLine = max > 0 ? `<div class="meta">Доступно: ${max}</div>` : "";
 
         row.innerHTML = `
           <div class="topic">
             <div class="name">${n}. ${topicName}</div>
-            <div class="meta">${meta}</div>
+            ${metaLine}
           </div>
           <div class="qty">
             <button class="qty-btn" data-op="dec" data-num="${n}" ${val <= 0 ? "disabled" : ""} aria-label="Уменьшить количество для номера ${n}" title="Уменьшить">−</button>
